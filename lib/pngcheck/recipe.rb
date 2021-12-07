@@ -6,7 +6,7 @@ module Pngcheck
     ROOT = Pathname.new(File.expand_path("../..", __dir__))
 
     def initialize
-      super("pngcheck", "3.0.3")
+      super("pngcheck", "3.0.3", make_command: "gcc -shared -fPIC -Wall -O -DUSE_ZLIB -lz -o pngcheck.so pngcheck.c")
 
       @files << {
         url: "http://www.libpng.org/pub/png/src/pngcheck-3.0.3.tar.gz",
@@ -31,8 +31,12 @@ module Pngcheck
       File.join(@target, "#{name}-#{version}-#{host}.installed")
     end
 
+    def configure
+      # noop
+    end
+
     def install
-      libs = Dir.glob(File.join(port_path, "{lib,bin}", "*"))
+      libs = Dir.glob(File.join(work_path, "*"))
         .grep(/\/(?:lib)?[a-zA-Z0-9\-]+\.(?:so|dylib|dll)$/)
 
       FileUtils.cp_r(libs, ROOT.join("lib", "pngcheck"), verbose: true)
