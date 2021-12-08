@@ -2,3 +2,7 @@
 
 require "bundler/gem_tasks"
 task default: %i[]
+
+task :compile do
+  require_relative "ext/extconf"
+end
