@@ -6,7 +6,7 @@ module Pngcheck
     ROOT = Pathname.new(File.expand_path("../..", __dir__))
 
     def initialize
-      super("pngcheck", "3.0.3", make_command: "gcc -shared -fPIC -Wall -O -DUSE_ZLIB -lz -o pngcheck.so pngcheck.c")
+      super("pngcheck", "3.0.3", make_command: make_command)
 
       @files << {
         url: "http://www.libpng.org/pub/png/src/pngcheck-3.0.3.tar.gz",
@@ -15,6 +15,14 @@ module Pngcheck
 
       @target = ROOT.join(@target).to_s
       @printed = {}
+    end
+
+    def make_command
+      if MiniPortile.windows?
+        "gcc -shared -fPIC -Wall -O -DUSE_ZLIB -o pngcheck.dll pngcheck.c -lz"
+      else
+        "gcc -shared -fPIC -Wall -O -DUSE_ZLIB -o pngcheck.so pngcheck.c -lz"
+      end
     end
 
     def cook_if_not
