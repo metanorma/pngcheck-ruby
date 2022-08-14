@@ -22,7 +22,7 @@ module Pngcheck
   typedef :int, :searching
   typedef :pointer, :file_out
   typedef :int, :status
-  attach_function :pngcheck, [:file, :file_path, :searching, :file_out], :status
+  attach_function :pngcheck, %i[file file_path searching file_out], :status
 
   class << self
     def check_file(path)
@@ -34,6 +34,7 @@ module Pngcheck
 
       puts "stderr: #{stderr}"
       puts "stdout: #{stdout}"
+      puts "code:   #{code}"
 
       true
     end

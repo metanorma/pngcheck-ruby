@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "mini_portile2"
 require "pathname"
 
@@ -31,7 +33,6 @@ module Pngcheck
 
     def cook
       super
-
       FileUtils.touch(checkpoint)
     end
 
@@ -45,7 +46,7 @@ module Pngcheck
 
     def install
       libs = Dir.glob(File.join(work_path, "*"))
-        .grep(/\/(?:lib)?[a-zA-Z0-9\-]+\.(?:so|dylib|dll)$/)
+        .grep(%r{/(?:lib)?[a-zA-Z0-9\-]+\.(?:so|dylib|dll)$})
 
       FileUtils.cp_r(libs, ROOT.join("lib", "pngcheck"), verbose: true)
     end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "../lib/pngcheck"
 
 RSpec.configure do |config| # rubocop:disable Style/SymbolProc

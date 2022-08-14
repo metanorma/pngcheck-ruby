@@ -1,3 +1,4 @@
+/.vscode/
 /.bundle/
 /.yardoc
 /_yardoc/
@@ -11,3 +12,6 @@ Gemfile.lock
 *.dll
 *.dylib
 *.so
+
+# remote file cache
+.rubocop-*

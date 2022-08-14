@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Pngcheck
   module LibC
     extend FFI::Library
@@ -5,7 +7,7 @@ module Pngcheck
 
     typedef :pointer, :file
 
-    attach_function :fopen, [:string, :string], :file
+    attach_function :fopen, %i[string string], :file
     attach_function :fclose, [:file], :int
   end
 end
