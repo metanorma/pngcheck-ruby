@@ -1,0 +1,9 @@
+inherit_from:
+  - 'https://raw.githubusercontent.com/riboseinc/oss-guides/master/ci/rubocop.yml'
+
+AllCops:
+  TargetRubyVersion: 2.6
+  SuggestExtensions: false
+
+Gemspec/RequireMFA:
+  Enabled: false
