@@ -1,8 +1,10 @@
-# Pngcheck
+[![test-and-release](https://github.com/metanorma/pngcheck-ruby/actions/workflows/test-and-release.yml/badge.svg)](https://github.com/metanorma/pngcheck-ruby/actions/workflows/test-and-release.yml)
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/pngcheck`. To experiment with that code, run `bin/console` for an interactive prompt.
+# PngCheck
 
-TODO: Delete this and the text above, and describe your gem
+pngcheck gem verifies the integrity of PNG, JNG and MNG files (by checking the internal 32-bit CRCs, a.k.a. checksums, and decompressing the image data); it can optionally dump almost all of the chunk-level information in the image in human-readable form. For example, it can be used to print the basic statistics about an image (dimensions, bit depth, etc.); to list the color and transparency info in its palette (assuming it has one); or to extract the embedded text annotations.
+
+pngcheck is a Ruby wrapper around original pngcheck tool available at http://www.libpng.org/pub/png/apps/pngcheck.html
 
 ## Installation
 
@@ -22,13 +24,25 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+```ruby
+status, info = PngCheck.analyze_file("spec/examples/correct.png")
+```
+where ```status``` is one of the constants:
 
-## Development
+```ruby
+PngCheck::STATUS_OK = 0
+PngCheck::STATUS_WARNING = 1        # an error in some circumstances but not in all
+PngCheck::STATUS_MINOR_ERROR = 3    # minor spec errors (e.g., out-of-range values)
+PngCheck::STATUS_MAJOR_ERROR = 4    # file corruption, invalid chunk length/layout, etc.
+PngCheck::STATUS_CRITICAL_ERROR = 5 # unexpected EOF or other file(system) error
+```
 
-After checking out the repo, run `bin/setup` to install dependencies. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+and ```info``` is either file content information for correct files or error message for corrupt files
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+```ruby
+valid = PngCheck.check_file("spec/examples/correct.png")
+```
+```valid = true``` if the file is correct otherwise an exception of type ```PngCheck::CorruptPngError``` is railed
 
 ## Contributing
 

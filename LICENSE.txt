@@ -1,0 +1,53 @@
+BSD 2-Clause License
+
+Copyright (c) 2022, Ribose Inc.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+This module includes original pngcheck software [http://www.libpng.org/pub/png/apps/pngcheck.html]
+that is distributed under the follwoing license:
+
+   Copyright 1995-2020 by Alexander Lehmann <lehmann@usa.net>,
+                          Andreas Dilger <adilger@enel.ucalgary.ca>,
+                          Glenn Randers-Pehrson <randeg@alum.rpi.edu>,
+                          Greg Roelofs <newt@pobox.com>,
+                          John Bowler <jbowler@acm.org>,
+                          Tom Lane <tgl@sss.pgh.pa.us>
+
+   Permission to use, copy, modify, and distribute this software and its
+   documentation for any purpose and without fee is hereby granted, provided
+   that the above copyright notice appear in all copies and that both that
+   copyright notice and this permission notice appear in supporting
+   documentation.  This software is provided "as is" without express or
+   implied warranty.
+
+
+[This license applies to pngcheck.c and its associated makefiles and
+ documentation in the main directory.  The files in the "gpl" subdirectory--
+ specifically, pngsplit.c and png-fix-IDAT-windowsize.c--are licensed under the
+ GNU General Public License.  The files in "amiga" subdirectory are Copyright
+ 2003 Simon Goodwin and were contributed without an explicit license statement,
+ but insofar as the "gpl" subdirectory didn't exist at the time, it's safe to
+ assume their intended license was similar to pngcheck's, just with Simon's
+ copyright replacing the one above.]
