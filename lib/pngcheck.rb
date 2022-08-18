@@ -3,12 +3,17 @@
 require "ffi"
 require "tempfile"
 require_relative "pngcheck/version"
-require_relative "pngcheck/lib_c"
 
-module Pngcheck
-  class Error < StandardError; end
+module PngCheck
+  class CorruptPngError < StandardError; end
 
   STATUS_OK = 0
+  STATUS_WARNING = 1        # an error in some circumstances but not in all
+  STATUS_MINOR_ERROR = 3    # minor spec errors (e.g., out-of-range values)
+  STATUS_MAJOR_ERROR = 4    # file corruption, invalid chunk length/layout, etc.
+  STATUS_CRITICAL_ERROR = 5 # unexpected EOF or other file(system) error
+
+  EXTRA_MESSAGE_SIZE = 1024
 
   extend FFI::Library
 
@@ -16,52 +21,29 @@ module Pngcheck
   ffi_lib File.expand_path("pngcheck/#{lib_filename}", __dir__)
     .gsub("/", File::ALT_SEPARATOR || File::SEPARATOR)
 
-  # int pngcheck(FILE *fp, char *_fname, int searching, FILE *fpOut)
-  typedef :pointer, :file
+  # int pngcheck_wrapped(FILE *fp, char * cname)
   typedef :string, :file_path
-  typedef :int, :searching
-  typedef :pointer, :file_out
+  typedef :pointer, :extra_message
   typedef :int, :status
-  attach_function :pngcheck, %i[file file_path searching file_out], :status
+  attach_function :pngcheck_wrapped, %i[file_path file_path extra_message],
+                  :status
 
   class << self
-    def check_file(path)
-      file = LibC.fopen(path, "rb")
-
-      stdout, stderr, code = capture3 do
-        pngcheck(file, path, 0, nil)
+    def analyze_file(path)
+      Tempfile.open("captured-stream-") do |captured_stream|
+        extra_msg = FFI::Buffer.alloc_out(EXTRA_MESSAGE_SIZE, 1, false)
+        status = pngcheck_wrapped(path, captured_stream.path, extra_msg)
+        # we assume that pngcheck_wrapped returns either captured_stream
+        # or extra message but not both
+        [status, captured_stream.read + extra_msg.get_string(16)]
       end
+    end
 
-      puts "stderr: #{stderr}"
-      puts "stdout: #{stdout}"
-      puts "code:   #{code}"
+    def check_file(path)
+      status, info = analyze_file(path)
+      raise CorruptPngError.new info unless status == STATUS_OK
 
       true
-    end
-
-    def capture3
-      stderr = status = nil
-
-      stdout = capture_stream($stdout) do
-        stderr = capture_stream($stderr) do
-          status = yield
-        end
-      end
-
-      [stdout, stderr, status]
-    end
-
-    def capture_stream(stream_io)
-      origin_stream = stream_io.dup
-
-      Tempfile.open("captured_stream") do |captured_stream|
-        stream_io.reopen(captured_stream)
-        yield
-        captured_stream.rewind
-        return captured_stream.read
-      end
-    ensure
-      stream_io.reopen(origin_stream)
     end
   end
 end

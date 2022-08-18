@@ -3,12 +3,12 @@
 require "mini_portile2"
 require "pathname"
 
-module Pngcheck
+module PngCheck
   class Recipe < MiniPortile
     ROOT = Pathname.new(File.expand_path("../..", __dir__))
 
     def initialize
-      super("pngcheck", "3.0.3", make_command: make_command)
+      super("pngcheck", "3.0.3")
 
       @files << {
         url: "http://www.libpng.org/pub/png/src/pngcheck-3.0.3.tar.gz",
@@ -19,11 +19,11 @@ module Pngcheck
       @printed = {}
     end
 
-    def make_command
+    def make_cmd
       if MiniPortile.windows?
-        "gcc -shared -fPIC -Wall -O -DUSE_ZLIB -o pngcheck.dll pngcheck.c -lz"
+        +"gcc -shared -fPIC -Wall -O -DUSE_ZLIB -o pngcheck.dll wrapper.c -lz"
       else
-        "gcc -shared -fPIC -Wall -O -DUSE_ZLIB -o pngcheck.so pngcheck.c -lz"
+        +"gcc -shared -fPIC -Wall -O -DUSE_ZLIB -o pngcheck.so wrapper.c -lz"
       end
     end
 
@@ -41,18 +41,18 @@ module Pngcheck
     end
 
     def configure
-      # noop
+      FileUtils.cp(ROOT.join("ext", "wrapper.c"), work_path, verbose: false)
     end
 
     def install
       libs = Dir.glob(File.join(work_path, "*"))
         .grep(%r{/(?:lib)?[a-zA-Z0-9\-]+\.(?:so|dylib|dll)$})
 
-      FileUtils.cp_r(libs, ROOT.join("lib", "pngcheck"), verbose: true)
+      FileUtils.cp_r(libs, ROOT.join("lib", "pngcheck"), verbose: false)
     end
 
     def execute(action, command, command_opts = {})
-      super(action, command, command_opts.merge(debug: true))
+      super(action, command, command_opts.merge(debug: false))
     end
 
     def message(text)
