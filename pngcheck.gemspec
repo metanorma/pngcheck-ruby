@@ -29,6 +29,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "ffi", "~> 1.0"
   spec.add_runtime_dependency "mini_portile2", "~> 2.7"
 
+  spec.add_development_dependency "libpng-ruby", "~> 0.6"
   spec.add_development_dependency "rspec", "~> 3.0"
   spec.add_development_dependency "rubocop", "~> 1.4"
 
