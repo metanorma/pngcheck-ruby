@@ -21,19 +21,28 @@ module PngCheck
   ffi_lib File.expand_path("pngcheck/#{lib_filename}", __dir__)
     .gsub("/", File::ALT_SEPARATOR || File::SEPARATOR)
 
-  # int pngcheck_wrapped(FILE *fp, char * cname)
+  # int pngcheck_file(char *fname, char *cname, char *extra_message)
   typedef :string, :file_path
   typedef :pointer, :extra_message
   typedef :int, :status
-  attach_function :pngcheck_wrapped, %i[file_path file_path extra_message],
+  attach_function :pngcheck_file, %i[file_path file_path extra_message],
                   :status
+  # int pngcheck_string(char *data, int size, char *cname, char *extra_message)
+  typedef :pointer, :data
+  typedef :int, :size
+  attach_function :pngcheck_buffer, %i[data size file_path extra_message],
+                  :status
+
+  @@semaphore = Mutex.new
 
   class << self
     def analyze_file(path)
       Tempfile.open("captured-stream-") do |captured_stream|
         extra_msg = FFI::Buffer.alloc_out(EXTRA_MESSAGE_SIZE, 1, false)
-        status = pngcheck_wrapped(path, captured_stream.path, extra_msg)
-        # we assume that pngcheck_wrapped returns either captured_stream
+        @@semaphore.lock
+        status = pngcheck_file(path, captured_stream.path, extra_msg)
+        @@semaphore.unlock
+        # we assume that pngcheck_file returns either captured_stream
         # or extra message but not both
         [status, captured_stream.read + extra_msg.get_string(16)]
       end
@@ -41,6 +50,26 @@ module PngCheck
 
     def check_file(path)
       status, info = analyze_file(path)
+      raise CorruptPngError.new info unless status == STATUS_OK
+
+      true
+    end
+
+    def analyze_buffer(data)
+      Tempfile.open("captured-stream-") do |captured_stream|
+        extra_msg = FFI::Buffer.alloc_out(EXTRA_MESSAGE_SIZE, 1, false)
+        mem_buf = FFI::MemoryPointer.new(:char, data.bytesize)
+        mem_buf.put_bytes(0, data)
+        @@semaphore.lock
+        status = pngcheck_buffer(mem_buf, data.bytesize, captured_stream.path,
+                                 extra_msg)
+        @@semaphore.unlock
+        [status, captured_stream.read + extra_msg.get_string(16)]
+      end
+    end
+
+    def check_buffer(data)
+      status, info = analyze_buffer(data)
       raise CorruptPngError.new info unless status == STATUS_OK
 
       true

@@ -24,10 +24,7 @@ Or install it yourself as:
 
 ## Usage
 
-```ruby
-status, info = PngCheck.analyze_file("spec/examples/correct.png")
-```
-where ```status``` is one of the constants:
+### Png status codes
 
 ```ruby
 PngCheck::STATUS_OK = 0
@@ -37,12 +34,45 @@ PngCheck::STATUS_MAJOR_ERROR = 4    # file corruption, invalid chunk length/layo
 PngCheck::STATUS_CRITICAL_ERROR = 5 # unexpected EOF or other file(system) error
 ```
 
-and ```info``` is either file content information for correct files or error message for corrupt files
+### File processing
+
+```ruby
+status, info = PngCheck.analyze_file("spec/examples/correct.png")
+```
+where ```status``` is file status code and ```info``` is either file content information for correct files or error message for corrupt files
 
 ```ruby
 valid = PngCheck.check_file("spec/examples/correct.png")
 ```
 ```valid = true``` if the file is correct otherwise an exception of type ```PngCheck::CorruptPngError``` is railed
+
+### Memory buffer processing
+
+```ruby
+data = File.binread("spec/examples/correct.png")
+status, info = PngCheck.analyze_buffer(data)
+```
+where ```status``` is file status code and ```info``` is either file content information for correct files or error message for corrupt files
+
+```ruby
+data = File.binread("spec/examples/correct.png")
+valid = PngCheck.check_buffer(data)
+```
+```valid = true``` if the file is correct otherwise an exception of type ```PngCheck::CorruptPngError``` is railed
+
+### Using with libpng-ruby
+```ruby
+require 'png'
+encoded = File.binread("spec/examples/correct.png")
+begin
+    expect(PngCheck.check_buffer(encoded)).to eql true
+    dec = PNG::Decoder.new
+    raw = dec << encoded
+rescue PngCheck::CorruptPngError => e
+    puts "Exception #{e.message}"
+end
+```
+
 
 ## Contributing
 
