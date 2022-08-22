@@ -1,4 +1,4 @@
-image:https://github.com/metanorma/pngcheck-ruby/actions/workflows/test-and-release.yml/badge.svg)["test-and-release", link="https://github.com/metanorma/pngcheck-ruby/actions/workflows/test-and-release.yml"]
+image:https://github.com/metanorma/pngcheck-ruby/actions/workflows/test-and-release.yml/badge.svg["test-and-release", link="https://github.com/metanorma/pngcheck-ruby/actions/workflows/test-and-release.yml"]
 
 == PngCheck: PNG, JNG and MNG integrity checks
 
