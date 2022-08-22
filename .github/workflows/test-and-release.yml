@@ -37,9 +37,121 @@ jobs:
       - run: bundle install
       - run: bundle exec rake spec
 
+  package:
+    name: Package ${{ matrix.os }}, ${{ matrix.ruby-version }}, ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: any
+            ruby-version: '2.7'
+          - os: ubuntu-latest
+            platform: x86_64-linux
+            ruby-version: '2.7'
+          - os: windows-latest
+            platform: x64-mingw32
+            ruby-version: '2.7'
+          - os: windows-latest
+            platform: x64-mingw-ucrt
+            ruby-version: '3.1'
+          - os: macos-latest
+            platform: x86_64-darwin
+            ruby-version: '2.7'
+          - os: ubuntu-latest
+            platform: aarch64-linux
+            ruby-version: '2.7'
+          - os: macos-latest
+            platform: arm64-darwin
+            ruby-version: '2.7'
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Ubuntu packages
+        if: startsWith(matrix.os, 'ubuntu') && startsWith(matrix.platform, 'aarch64')
+        run: |
+          sudo apt-get update
+          sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
+
+      - name: Install Windows packages for Ruby < 3.1
+        if: matrix.os == 'windows-latest' && matrix.ruby != '3.1'
+        run: pacman --noconfirm -S mingw-w64-x86_64-libpng
+
+      - name: Install Windows packages for Ruby = 3.1
+        if: matrix.os == 'windows-latest' && matrix.ruby == '3.1'
+        run: pacman --noconfirm -S mingw-w64-ucrt-x86_64-libpng
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true
+
+      - run: bundle exec rake gem:native:${{ matrix.platform }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: pkg
+          path: pkg/*.gem
+
+  test-build-binary:
+    needs: package
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        ruby-version: [ '2.7', '3.0', '3.1' ]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby-version }}
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: pkg
+        path: pkg
+
+    - name: Install binary gem
+      run: gem install -b pkg/pngcheck-$(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION")-$(ruby -e "puts RUBY_PLATFORM.sub(/darwin\d{2}$/, 'darwin')").gem
+# MacOS with have something like arm64-darwin19, others just aarch64-linux
+    - name: Test
+      run:  ruby -remf2svg -e "PngCheck.check_file('spec/examples/correct.png')"
+
+  test-build-any:
+    needs: package
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        ruby-version: [ '2.7', '3.0', '3.1' ]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby-version }}
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: pkg
+        path: pkg
+
+    - name: Install native gem
+      run: gem install -b pkg/pngcheck-$(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION").gem
+
+    - name: Test
+      run:  ruby -remf2svg -e "PngCheck.check_file('spec/examples/correct.png')"
+
   release:
     name: Release gem
-    needs: test
+    needs: [ test, test-build-bin, test-build-any ]
     runs-on: ubuntu-latest
     if: contains(github.ref, 'refs/tags/v')
     steps:
