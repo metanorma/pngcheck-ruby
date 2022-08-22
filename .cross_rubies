@@ -1,7 +1,6 @@
-x86_64-w64-mingw32
-x86_64-w64-mingw32
+w64-mingw32
 x86_64-linux
 aarch64-linux
 x86_64-darwin
 arm64-darwin
-x86_64-w64-mingw32
+w64-mingw-ucrt

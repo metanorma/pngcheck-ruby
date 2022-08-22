@@ -39,7 +39,7 @@ jobs:
       - run: bundle exec rake spec
 
   package:
-    name: Package ${{ matrix.os }}, ${{ matrix.ruby-version }}, ${{ matrix.platform }}
+    name: Package ${{ matrix.os }}, ${{ matrix.ruby }}, ${{ matrix.platform }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -47,48 +47,50 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: any
-            ruby-version: '2.7'
+            ruby: '2.7'
           - os: ubuntu-latest
             platform: x86_64-linux
-            ruby-version: '2.7'
+            ruby: '2.7'
           - os: windows-latest
-            platform: x64-mingw32
-            ruby-version: '2.7'
+            platform: w64-mingw32
+            ruby: '2.7'
           - os: windows-latest
-            platform: x64-mingw-ucrt
-            ruby-version: '3.1'
+            platform: w64-mingw-ucrt
+            ruby: '3.1'
           - os: macos-latest
             platform: x86_64-darwin
-            ruby-version: '2.7'
+            ruby: '2.7'
           - os: ubuntu-latest
             platform: aarch64-linux
-            ruby-version: '2.7'
+            ruby: '2.7'
           - os: macos-latest
             platform: arm64-darwin
-            ruby-version: '2.7'
+            ruby: '2.7'
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install Ubuntu packages
-        if: startsWith(matrix.os, 'ubuntu') && startsWith(matrix.platform, 'aarch64')
+      - if: startsWith(matrix.os, 'ubuntu') && startsWith(matrix.platform, 'aarch64')
         run: |
           sudo apt-get update
           sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
-
-      - name: Install Windows packages for Ruby < 3.1
-        if: matrix.os == 'windows-latest' && matrix.ruby != '3.1'
-        run: pacman --noconfirm -S mingw-w64-x86_64-libpng
-
-      - name: Install Windows packages for Ruby = 3.1
-        if: matrix.os == 'windows-latest' && matrix.ruby == '3.1'
-        run: pacman --noconfirm -S mingw-w64-ucrt-x86_64-libpng
+          sudo dpkg --add-architecture arm64
+          wget http://ports.ubuntu.com/pool/main/z/zlib/zlib1g-dev_1.2.11.dfsg-2ubuntu1.3_arm64.deb
+          dpkg -x zlib1g-dev_1.2.11.dfsg-2ubuntu1.3_arm64.deb zli
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ${{ matrix.ruby-version }}
-          bundler-cache: true
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: false
 
+      - if: matrix.os == 'windows-latest' && matrix.ruby != '3.1'
+        run: pacman --noconfirm -S mingw-w64-x86_64-libpng
+
+      - if: matrix.os == 'windows-latest' && matrix.ruby == '3.1'
+        run: pacman --noconfirm -S mingw-w64-ucrt-x86_64-libpng
+
+      - run: gem update bundler
+      - run: bundle install
       - run: bundle exec rake gem:native:${{ matrix.platform }}
 
       - uses: actions/upload-artifact@v2
@@ -103,14 +105,14 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
-        ruby-version: [ '2.7', '3.0', '3.1' ]
+        ruby: [ '2.7', '3.0', '3.1' ]
 
     steps:
     - uses: actions/checkout@v3
 
     - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: ${{ matrix.ruby-version }}
+        ruby-version: ${{ matrix.ruby }}
 
     - uses: actions/download-artifact@v2
       with:
@@ -130,14 +132,14 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
-        ruby-version: [ '2.7', '3.0', '3.1' ]
+        ruby: [ '2.7', '3.0', '3.1' ]
 
     steps:
     - uses: actions/checkout@v3
 
     - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: ${{ matrix.ruby-version }}
+        ruby-version: ${{ matrix.ruby }}
 
     - uses: actions/download-artifact@v2
       with:
@@ -152,7 +154,7 @@ jobs:
 
   release:
     name: Release gem
-    needs: [ test, test-build-bin, test-build-any ]
+    needs: [ test, test-build-binary, test-build-any ]
     runs-on: ubuntu-latest
     if: contains(github.ref, 'refs/tags/v')
     steps:
