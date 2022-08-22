@@ -7,16 +7,6 @@ RSpec::Core::RakeTask.new(:spec)
 
 require "rubocop/rake_task"
 
-RuboCop::RakeTask.new
-
-task default: %i[spec rubocop]
-
-task :compile do
-  require_relative "ext/extconf"
-end
-
-task spec: :compile
-
 desc "Build install-compilation gem"
 task "gem:native:any" do
   sh "rake platform:any gem"

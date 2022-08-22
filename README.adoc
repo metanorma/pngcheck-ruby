@@ -1,0 +1,161 @@
+image:https://github.com/metanorma/pngcheck-ruby/actions/workflows/test-and-release.yml/badge.svg["test-and-release", link="https://github.com/metanorma/pngcheck-ruby/actions/workflows/test-and-release.yml"]
+
+== PngCheck: PNG, JNG and MNG integrity checks
+
+The `pngcheck` gem provides the `PngCheck` Ruby library, used to
+
+* verify the integrity of PNG, JNG and MNG files, through
+
+** checking the internal 32-bit CRCs ("checksums");
+** decompressing the image data;
+
+* dump *almost* all of the chunk-level information in the image in
+human-readable form, including:
+
+** print the basic statistics about an image (dimensions, bit depth, etc.);
+** list the color and transparency info in its palette (assuming it has one); or
+** to extract the embedded text annotations.
+
+The `PngCheck` Ruby library is a wrapper around the original
+http://www.libpng.org/pub/png/apps/pngcheck.html[`pngcheck`] tool
+from the http://www.libpng.org/pub/png/libpng.html[`libpng`] project.
+
+NOTE: `PngCheck` incorporates
+http://www.libpng.org/pub/png/apps/pngcheck.html[`pngcheck`] version 3.0.3, as
+provided on the official website:
+http://www.libpng.org/pub/png/apps/pngcheck.html
+
+NOTE: The `PngCheck` Ruby library does not distribute nor modify the `pngcheck`
+GPL executables `pngsplit` and `png-fix-IDAT-windowsize`, and hence is not bound
+under the GPL license.
+
+=== Installation
+
+Add this line to your application's Gemfile:
+
+[source,ruby]
+----
+gem 'pngcheck'
+----
+
+And then execute:
+
+[source,sh]
+----
+$ bundle install
+----
+
+Or install it yourself as:
+[source,sh]
+----
+$ gem install pngcheck
+----
+
+=== Usage
+
+==== PngCeck status codes
+
+[source,ruby]
+----
+PngCheck::STATUS_OK = 0
+PngCheck::STATUS_WARNING = 1        # an error in some circumstances but not in all
+PngCheck::STATUS_MINOR_ERROR = 3    # minor spec errors (e.g., out-of-range values)
+PngCheck::STATUS_MAJOR_ERROR = 4    # file corruption, invalid chunk length/layout, etc.
+PngCheck::STATUS_CRITICAL_ERROR = 5 # unexpected EOF or other file(system) error
+----
+
+==== File processing
+
+[source,ruby]
+----
+status, info = PngCheck.analyze_file("spec/examples/correct.png")
+----
+
+Where:
+
+* `status` is file status code
+* `info` is either file content information for correct files, or error message for corrupt files
+
+[source,ruby]
+----
+valid = PngCheck.check_file("spec/examples/correct.png")
+----
+
+Where:
+
+* `valid` is `true` if the file is correct
+* otherwise an exception of type `PngCheck::CorruptPngError` is raised
+
+
+==== Memory buffer processing
+
+[source,ruby]
+----
+data = File.binread("spec/examples/correct.png")
+status, info = PngCheck.analyze_buffer(data)
+----
+
+Where:
+
+* `status` is the PngCheck status code
+* `info` is either file content information for correct files, or the error
+message for corrupt files
+
+
+[source,ruby]
+----
+data = File.binread("spec/examples/correct.png")
+valid = PngCheck.check_buffer(data)
+----
+
+Where:
+
+* `valid` is `true` if the file is correct
+* otherwise an exception of type `PngCheck::CorruptPngError` is raised
+
+
+==== Pre-validation with libpng-ruby
+
+`libpng-ruby` is the Ruby wrapper library around `libpng`, commonly used to
+process PNG files in Ruby.
+
+To prevent crashing libpng-ruby with corrupt PNG files, you may wish to
+pre-verify integrity of the PNG file before loading it with `libpng-ruby`.
+Any errors in the PNG will cause a `PngCheck::CorruptPngError` to be raised,
+hence skipping the `libpng` code.
+
+The mechanism to do so is demonstrated below:
+
+[source,ruby]
+----
+require 'png'
+encoded = File.binread("spec/examples/correct.png")
+
+begin
+  PngCheck.check_buffer(encoded)
+  dec = PNG::Decoder.new
+  raw = dec << encoded
+rescue PngCheck::CorruptPngError => e
+  puts "Exception #{e.message}"
+end
+----
+
+
+=== Contributing
+
+Bug reports and pull requests are welcome on GitHub at https://github.com/metanorma/pngcheck-ruby.
+
+=== License
+
+Open-sourced under the link:LICENSE.txt[Ribose BSD-2 clause license].
+Copyright Ribose for all code excluding the `pngcheck` library.
+
+The `pngcheck` library is provided under its original license as unmodified
+code, its license is located
+http://www.libpng.org/pub/png/src/pngcheck-3.0.3.LICENSE[here].
+
+NOTE: The core code of the `pngcheck` library is licensed under the
+http://www.libpng.org/pub/png/src/libpng-LICENSE.txt[libpng 3-clause BSD license],
+while two additional executables `pngsplit` and `png-fix-IDAT-windowsize` are
+offered under GPL. Since the `PngCheck` Ruby library does not offer the GPL
+executables, the gem itself is offered under a BSD license instead of GPL.
