@@ -33,17 +33,6 @@ module PngCheck
       @printed = {}
     end
 
-#    def extract_file(file, target)
-#      if File.extname(file).eql?(".deb")
-#        message "Extracting #{file} into #{target}... "
-#        execute("extract", ["dpkg", "-x", file, target],
-#                { cd: Dir.pwd, initial_message: false })
-#        system("ls #{target}")
-#      else
-#        super(file, target)
-#      end
-#    end
-
     def make_cmd
       if MiniPortile.windows?
         "gcc #{COMMON_FLAGS} -o pngcheck.dll wrapper.c -lz"
@@ -121,9 +110,9 @@ module PngCheck
       @host_platform ||=
         case @host
         when /\Ax86_64-w64-mingw32/
-          "w64-mingw32"
+          "x64-mingw32"
         when /\Ax86_64-w64-mingw-ucrt/
-          "w64-mingw-ucrt"
+          "x64-mingw-ucrt"
         when /\Ax86_64.*linux/
           "x86_64-linux"
         when /\A(arm64|aarch64).*linux/
@@ -162,7 +151,7 @@ module PngCheck
           "ELF 64-bit LSB shared object, ARM aarch64"
         when "x86_64-linux"
           "ELF 64-bit LSB shared object, x86-64"
-        when /\Aw64-mingw(32|-ucrt)/
+        when /\Ax64-mingw(32|-ucrt)/
           "PE32+ executable (DLL) (console) x86-64, for MS Windows"
         else
           "skip"
@@ -171,25 +160,27 @@ module PngCheck
 
     def cc
       @cc ||=
-        case target_platform
-        when "aarch64-linux"
-          "aarch64-linux-gnu-gcc"
-        when "x86_64-linux"
-          "x86_64-linux-gnu-gcc"
-        when "arm64-darwin"
-          "gcc -target arm64-apple-macos11"
-        else
+        if target_platform.eql?(host_platform)
           "gcc"
+        else
+          case target_platform
+          when "aarch64-linux"
+            "aarch64-linux-gnu-gcc"
+          when "arm64-darwin"
+            "gcc -target arm64-apple-macos11"
+          else
+            "gcc"
+          end
         end
     end
 
     def cflags
       @cflags ||=
-        case target_platform
-        when "aarch64-linux"
-          "-I./usr/include -L./usr/lib/#{target_platform}-gnu"
-        else
+        if target_platform.eql?(host_platform) ||
+            !target_platform.eql?("aarch64-linux")
           ""
+        else
+          "-I./usr/include -L./usr/lib/#{target_platform}-gnu"
         end
     end
     # rubocop:enable Metrics/CyclomaticComplexity

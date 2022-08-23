@@ -55,10 +55,10 @@ jobs:
             platform: x86_64-linux
             ruby: '2.7'
           - os: windows-latest
-            platform: w64-mingw32
+            platform: x64-mingw32
             ruby: '2.7'
           - os: windows-latest
-            platform: w64-mingw-ucrt
+            platform: x64-mingw-ucrt
             ruby: '3.1'
           - os: macos-latest
             platform: x86_64-darwin
@@ -125,8 +125,11 @@ jobs:
     - name: Install binary gem
       run: gem install -b pkg/pngcheck-$(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION")-$(ruby -e "puts RUBY_PLATFORM.sub(/darwin\d{2}$/, 'darwin')").gem
 # MacOS with have something like arm64-darwin19, others just aarch64-linux
+
     - name: Test
-      run:  ruby -rpngcheck -e "PngCheck.check_file('spec/examples/correct.png')"
+      shell: bash
+      run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
+# For some reason powershell gets crazy with the line above
 
   test-build-any:
     needs: package
@@ -150,11 +153,12 @@ jobs:
         name: pkg
         path: pkg
 
-    - name: Install native gem
+    - name: Install gem
       run: gem install -b pkg/pngcheck-$(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION").gem
 
     - name: Test
-      run:  ruby -rpngcheck -e "PngCheck.check_file('spec/examples/correct.png')"
+      shell: bash
+      run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
 
   release:
     name: Release gem
