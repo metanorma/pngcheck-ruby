@@ -72,7 +72,7 @@ jobs:
       - if: startsWith(matrix.os, 'ubuntu') && startsWith(matrix.platform, 'aarch64')
         run: |
           sudo apt-get update
-          sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
+          sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu libarchive-tools
           sudo dpkg --add-architecture arm64
           wget http://ports.ubuntu.com/pool/main/z/zlib/zlib1g-dev_1.2.11.dfsg-2ubuntu1.3_arm64.deb
           dpkg -x zlib1g-dev_1.2.11.dfsg-2ubuntu1.3_arm64.deb zli

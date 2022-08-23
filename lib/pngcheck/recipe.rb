@@ -33,15 +33,16 @@ module PngCheck
       @printed = {}
     end
 
-    def extract_file(file, target)
-      if File.extname(file).eql?(".deb")
-        message "Extracting #{file} into #{target}... "
-        execute("extract", ["dpkg", "-x", file, target],
-                { cd: Dir.pwd, initial_message: false })
-      else
-        super(file, target)
-      end
-    end
+#    def extract_file(file, target)
+#      if File.extname(file).eql?(".deb")
+#        message "Extracting #{file} into #{target}... "
+#        execute("extract", ["dpkg", "-x", file, target],
+#                { cd: Dir.pwd, initial_message: false })
+#        system("ls #{target}")
+#      else
+#        super(file, target)
+#      end
+#    end
 
     def make_cmd
       if MiniPortile.windows?
