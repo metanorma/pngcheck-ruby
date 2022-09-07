@@ -173,6 +173,16 @@ jobs:
         name: pkg
         path: pkg
 
-    - uses: cadwallion/publish-rubygems-action@master
+    - name: Publish to rubygems.org
       env:
         RUBYGEMS_API_KEY: ${{secrets.METANORMA_CI_RUBYGEMS_API_KEY}}
+      run: |
+        mkdir -p ~/.gem
+        touch ~/.gem/credentials
+        cat > ~/.gem/credentials << EOF
+        ---
+        :rubygems_api_key: ${RUBYGEMS_API_KEY}
+        EOF
+        chmod 0600 ~/.gem/credentials
+        gem signin
+        for gem in pkg/*.gem; do gem push -V $gem; done
