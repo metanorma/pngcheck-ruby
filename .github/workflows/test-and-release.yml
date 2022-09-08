@@ -298,3 +298,51 @@ jobs:
         mv pkg/*musl.gem tmp
         for gem in pkg/*.gem; do gem push -V $gem; done
         for gem in tmp/*.gem; do gem push -V $gem; done
+
+  test-rubygems-musl:
+    name: test rubigems bindings on alpine-latest
+    if: contains(github.ref, 'refs/tags/v')
+    needs: release
+    continue-on-error: false
+    strategy:
+      fail-fast: false    
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:latest
+
+    steps:
+    - name: Install packages
+      run: |
+        apk --no-cache --upgrade add git ruby-dev build-base autoconf
+
+    - run: git config --global --add safe.directory $(pwd)
+    - uses: actions/checkout@v3
+
+    - name: Install binary gem
+      run: gem install pngcheck -v $(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION").gem
+
+    - name: Test
+      run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
+
+  test-rubygems-gnu:
+    name: test rubigems bindings on ubuntu-latest
+    if: contains(github.ref, 'refs/tags/v')
+    needs: release
+    continue-on-error: false
+    strategy:
+      fail-fast: false    
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby }}
+        bundler-cache: false
+
+    - name: Install binary gem
+      run: gem install pngcheck -v $(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION").gem
+
+    - name: Test
+      run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
