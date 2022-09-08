@@ -101,7 +101,7 @@ jobs:
           path: pkg/*.gem
 
   test-build-binary:
-    needs: package
+    needs: Package
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -132,7 +132,7 @@ jobs:
 # For some reason powershell gets crazy with the line above
 
   test-build-any:
-    needs: package
+    needs: Package
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -161,7 +161,7 @@ jobs:
       run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
 
   test-alpine:
-    name: test on alpine-latest
+    name: Test on alpine-latest
     continue-on-error: false
     strategy:
       fail-fast: false    
@@ -183,7 +183,7 @@ jobs:
     - run: bundle exec rake spec
 
   package-alpine:
-    name: package on alpine-latest
+    name: Package on alpine-latest
     needs: test-alpine
     continue-on-error: false
     strategy:
@@ -212,7 +212,7 @@ jobs:
         path: pkg/*.gem
 
   test-binary-alpine:
-    name: test binary package on alpine-latest
+    name: Test binary package on alpine-latest
     needs: package-alpine
     continue-on-error: false
     strategy:
@@ -241,7 +241,7 @@ jobs:
       run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
 
   test-ruby-alpine:
-    name: test ruby platform package on alpine-latest
+    name: Test ruby platform package on alpine-latest
     needs: package-alpine
     continue-on-error: false
     strategy:
@@ -300,12 +300,11 @@ jobs:
         for gem in tmp/*.gem; do gem push -V $gem; done
 
   test-rubygems-musl:
-    name: test rubigems bindings on alpine-latest
-    if: contains(github.ref, 'refs/tags/v')
-    needs: release
-    continue-on-error: false
-    strategy:
-      fail-fast: false    
+    name: Test rubygems bindings on alpine-latest
+#    if: contains(github.ref, 'refs/tags/v')
+#    needs: release
+    needs: [ test, test-build-binary, test-build-any, test-binary-alpine, test-ruby-alpine ]
+    continue-on-error: true
     runs-on: ubuntu-latest
     container:
       image: alpine:latest
@@ -319,18 +318,17 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Install binary gem
-      run: gem install pngcheck -v $(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION").gem
+      run: gem install pngcheck -v $(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION")
 
     - name: Test
       run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
 
   test-rubygems-gnu:
-    name: test rubigems bindings on ubuntu-latest
-    if: contains(github.ref, 'refs/tags/v')
-    needs: release
-    continue-on-error: false
-    strategy:
-      fail-fast: false    
+    name: Test rubygems bindings on ubuntu-latest
+#    if: contains(github.ref, 'refs/tags/v')
+#    needs: release
+    needs: [ test, test-build-binary, test-build-any, test-binary-alpine, test-ruby-alpine ]
+    continue-on-error: true
     runs-on: ubuntu-latest
 
     steps:
@@ -338,11 +336,11 @@ jobs:
 
     - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: ${{ matrix.ruby }}
+        ruby-version: 3.1
         bundler-cache: false
 
     - name: Install binary gem
-      run: gem install pngcheck -v $(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION").gem
+      run: gem install pngcheck -v $(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION")
 
     - name: Test
       run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
