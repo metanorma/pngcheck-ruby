@@ -113,8 +113,6 @@ module PngCheck
           "x64-mingw32"
         when /\Ax86_64-w64-mingw-ucrt/
           "x64-mingw-ucrt"
-        when /\Ax86_64.*linux/
-          "x86_64-linux"
         when /\A(arm64|aarch64).*linux/
           "aarch64-linux"
         when /\Ax86_64.*(darwin|macos|osx)/
@@ -149,7 +147,7 @@ module PngCheck
           "Mach-O 64-bit dynamically linked shared library x86_64"
         when "aarch64-linux"
           "ELF 64-bit LSB shared object, ARM aarch64"
-        when "x86_64-linux"
+        when /\Ax86_64.*linux.*/
           "ELF 64-bit LSB shared object, x86-64"
         when /\Ax64-mingw(32|-ucrt)/
           "PE32+ executable (DLL) (console) x86-64, for MS Windows"
