@@ -327,8 +327,11 @@ jobs:
     name: Test rubygems bindings on ubuntu-latest
 #    if: contains(github.ref, 'refs/tags/v')
 #    needs: release
-    needs: [ test, test-build-binary, test-build-any, test-binary-alpine, test-ruby-alpine ]
     continue-on-error: true
+    strategy:
+      fail-fast: false    
+      matrix:
+        ruby: [ '2.7', '3.0', '3.1' ]
     runs-on: ubuntu-latest
 
     steps:
@@ -336,7 +339,7 @@ jobs:
 
     - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 2.7
+        ruby-version: ${{ matrix.ruby }}
         bundler-cache: false
 
     - name: Install binary gem
