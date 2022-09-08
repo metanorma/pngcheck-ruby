@@ -297,53 +297,52 @@ jobs:
         mkdir tmp
         mv pkg/*musl.gem tmp
         for gem in pkg/*.gem; do gem push -V $gem; done
-        for gem in tmp/*.gem; do gem push -V $gem; done
+#        for gem in tmp/*.gem; do gem push -V $gem; done
 
-  test-rubygems-musl:
-    name: Test rubygems bindings on alpine-latest
+#  test-rubygems-musl:
+#    name: Test rubygems bindings on alpine-latest
 #    if: contains(github.ref, 'refs/tags/v')
 #    needs: release
-    needs: [ test, test-build-binary, test-build-any, test-binary-alpine, test-ruby-alpine ]
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    container:
-      image: alpine:latest
+#    continue-on-error: true
+#    runs-on: ubuntu-latest
+#    container:
+#      image: alpine:latest
 
-    steps:
-    - name: Install packages
-      run: |
-        apk --no-cache --upgrade add git ruby-dev build-base autoconf
+#    steps:
+#    - name: Install packages
+#      run: |
+#        apk --no-cache --upgrade add git ruby-dev build-base autoconf
 
-    - run: git config --global --add safe.directory $(pwd)
-    - uses: actions/checkout@v3
+#    - run: git config --global --add safe.directory $(pwd)
+#    - uses: actions/checkout@v3
 
-    - name: Install binary gem
-      run: gem install pngcheck -v $(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION")
+#    - name: Install binary gem
+#      run: gem install pngcheck -v $(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION")
 
-    - name: Test
-      run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
+#    - name: Test
+#      run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
 
-  test-rubygems-gnu:
-    name: Test rubygems bindings on ubuntu-latest
+#  test-rubygems-gnu:
+#    name: Test rubygems bindings on ubuntu-latest
 #    if: contains(github.ref, 'refs/tags/v')
 #    needs: release
-    continue-on-error: true
-    strategy:
-      fail-fast: false    
-      matrix:
-        ruby: [ '2.7', '3.0', '3.1' ]
-    runs-on: ubuntu-latest
+#    continue-on-error: true
+#    strategy:
+#      fail-fast: false    
+#      matrix:
+#        ruby: [ '2.7', '3.0', '3.1' ]
+#    runs-on: ubuntu-latest
 
-    steps:
-    - uses: actions/checkout@v3
+#    steps:
+#    - uses: actions/checkout@v3
 
-    - uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: ${{ matrix.ruby }}
-        bundler-cache: false
+#    - uses: ruby/setup-ruby@v1
+#      with:
+#        ruby-version: ${{ matrix.ruby }}
+#        bundler-cache: false
 
-    - name: Install binary gem
-      run: gem install pngcheck -v $(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION")
+#    - name: Install binary gem
+#      run: gem install pngcheck -v $(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION")
 
-    - name: Test
-      run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
+#    - name: Test
+#      run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
