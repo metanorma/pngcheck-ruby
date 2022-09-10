@@ -43,6 +43,12 @@ RSpec.describe do
     end.to raise_error(PngCheck::CorruptPngError)
   end
 
+  it "raises an exception on empty file check" do
+    expect do
+      PngCheck.check_file("spec/examples/empty.png")
+    end.to raise_error(PngCheck::EmptyPngError)
+  end
+
   it "raises an exception on missing file check" do
     expect do
       PngCheck.check_file("spec/examples/nofile.png")
@@ -99,6 +105,13 @@ RSpec.describe do
     expect do
       PngCheck.check_buffer(encoded)
     end.to raise_error(PngCheck::CorruptPngError)
+  end
+
+  it "raises an exception on empty buffer check" do
+    encoded = ""
+    expect do
+      PngCheck.check_buffer(encoded)
+    end.to raise_error(PngCheck::EmptyPngError)
   end
 
   require "png"

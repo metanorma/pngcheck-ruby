@@ -51,9 +51,9 @@ jobs:
           - os: ubuntu-latest
             platform: any
             ruby: '2.7'
-          - os: ubuntu-latest
-            platform: x86_64-linux
-            ruby: '2.7'
+#          - os: ubuntu-latest
+#            platform: x86_64-linux
+#            ruby: '2.7'
           - os: windows-latest
             platform: x64-mingw32
             ruby: '2.7'
@@ -63,9 +63,9 @@ jobs:
           - os: macos-latest
             platform: x86_64-darwin
             ruby: '2.7'
-          - os: ubuntu-latest
-            platform: aarch64-linux
-            ruby: '2.7'
+#          - os: ubuntu-latest
+#            platform: aarch64-linux
+#            ruby: '2.7'
           - os: macos-latest
             platform: arm64-darwin
             ruby: '2.7'
@@ -100,13 +100,14 @@ jobs:
           name: pkg
           path: pkg/*.gem
 
-  test-build-binary:
-    needs: Package
+  test-binary-package:
+    needs: package
+    name: Test binary package ${{ matrix.os }}, ${{ matrix.ruby }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        os: [ windows-latest, macos-latest ]
         ruby: [ '2.7', '3.0', '3.1' ]
 
     steps:
@@ -123,7 +124,9 @@ jobs:
         path: pkg
 
     - name: Install binary gem
-      run: gem install -b pkg/pngcheck-$(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION")-$(ruby -e "puts RUBY_PLATFORM.sub(/darwin\d{2}$/, 'darwin')").gem
+      run: |
+        ls pkg
+        gem install -b pkg/pngcheck-$(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION")-$(ruby -e "puts RUBY_PLATFORM.sub(/darwin\d{2}$/, 'darwin')").gem
 # MacOS with have something like arm64-darwin19, others just aarch64-linux
 
     - name: Test
@@ -131,8 +134,9 @@ jobs:
       run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
 # For some reason powershell gets crazy with the line above
 
-  test-build-any:
-    needs: Package
+  test-ruby-package:
+    name: Test ruby platform package
+    needs: package
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -182,67 +186,67 @@ jobs:
 
     - run: bundle exec rake spec
 
-  package-alpine:
-    name: Package on alpine-latest
-    needs: test-alpine
-    continue-on-error: false
-    strategy:
-      fail-fast: false    
-    runs-on: ubuntu-latest
-    container:
-      image: alpine:latest
+#  package-alpine:
+#    name: Package on alpine-latest
+#    needs: test-alpine
+#    continue-on-error: false
+#    strategy:
+#      fail-fast: false    
+#    runs-on: ubuntu-latest
+#    container:
+#      image: alpine:latest
 
-    steps:
-    - name: Install packages
-      run: |
-        apk --no-cache --upgrade add git ruby-dev libpng-dev build-base autoconf
+#    steps:
+#    - name: Install packages
+#      run: |
+#        apk --no-cache --upgrade add git ruby-dev libpng-dev build-base autoconf
 
-    - run: git config --global --add safe.directory $(pwd)
-    - uses: actions/checkout@v3
+#    - run: git config --global --add safe.directory $(pwd)
+#    - uses: actions/checkout@v3
 
-    - run: |
-        gem install bundle
-        bundle install
-        bundle exec rake gem:native:x86_64-linux-musl
-        bundle exec rake gem:native:any
+#    - run: |
+#       gem install bundle
+#        bundle install
+#        bundle exec rake gem:native:x86_64-linux-musl
+#        bundle exec rake gem:native:any
 
-    - uses: actions/upload-artifact@v2
-      with:
-        name: pkg
-        path: pkg/*.gem
+#    - uses: actions/upload-artifact@v2
+#      with:
+#        name: pkg
+#        path: pkg/*.gem
 
-  test-binary-alpine:
-    name: Test binary package on alpine-latest
-    needs: package-alpine
-    continue-on-error: false
-    strategy:
-      fail-fast: false    
-    runs-on: ubuntu-latest
-    container:
-      image: alpine:latest
+#  test-binary-alpine:
+#    name: Test binary package on alpine-latest
+#    needs: package-alpine
+#    continue-on-error: false
+#    strategy:
+#      fail-fast: false    
+#    runs-on: ubuntu-latest
+#    container:
+#      image: alpine:latest
 
-    steps:
-    - name: Install packages
-      run: |
-        apk --no-cache --upgrade add git ruby-dev build-base autoconf
+#    steps:
+#    - name: Install packages
+#      run: |
+#        apk --no-cache --upgrade add git ruby-dev build-base autoconf
 
-    - run: git config --global --add safe.directory $(pwd)
-    - uses: actions/checkout@v3
+#    - run: git config --global --add safe.directory $(pwd)
+#    - uses: actions/checkout@v3
 
-    - uses: actions/download-artifact@v2
-      with:
-        name: pkg
-        path: pkg
+#    - uses: actions/download-artifact@v2
+#      with:
+#        name: pkg
+#        path: pkg
 
-    - name: Install binary gem
-      run: gem install -b pkg/pngcheck-$(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION")-$(ruby -e "puts RUBY_PLATFORM").gem
+#    - name: Install binary gem
+#      run: gem install -b pkg/pngcheck-$(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION")-$(ruby -e "puts RUBY_PLATFORM").gem
 
-    - name: Test
-      run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
+#    - name: Test
+#      run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
 
-  test-ruby-alpine:
+  test-ruby-package-alpine:
     name: Test ruby platform package on alpine-latest
-    needs: package-alpine
+    needs: package
     continue-on-error: false
     strategy:
       fail-fast: false    
@@ -271,7 +275,7 @@ jobs:
 
   release:
     name: Release gem
-    needs: [ test, test-build-binary, test-build-any, test-binary-alpine, test-ruby-alpine ]
+    needs: [ test, test-alpine, test-binary-package, test-ruby-package, test-ruby-package-alpine ]
     runs-on: ubuntu-latest
     if: contains(github.ref, 'refs/tags/v')
     steps:

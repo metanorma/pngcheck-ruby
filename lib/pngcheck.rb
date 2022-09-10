@@ -5,7 +5,15 @@ require "tempfile"
 require_relative "pngcheck/version"
 
 module PngCheck
+  EMPTY_IMAGE = "Image is empty"
+
   class CorruptPngError < StandardError; end
+
+  class EmptyPngError < StandardError
+    def initialize(msg = EMPTY_IMAGE)
+      super
+    end
+  end
 
   STATUS_OK = 0
   STATUS_WARNING = 1        # an error in some circumstances but not in all
@@ -37,6 +45,36 @@ module PngCheck
 
   class << self
     def analyze_file(path)
+      return [STATUS_CRITICAL_ERROR, EMPTY_IMAGE] if File.zero? path
+
+      do_analyze_file(path)
+    end
+
+    def check_file(path)
+      status, info = analyze_file(path)
+      raise EmptyPngError.new if info.eql? EMPTY_IMAGE
+      raise CorruptPngError.new info unless status == STATUS_OK
+
+      true
+    end
+
+    def analyze_buffer(data)
+      return [STATUS_CRITICAL_ERROR, EMPTY_IMAGE] if data.empty?
+
+      do_analyze_buffer(data)
+    end
+
+    def check_buffer(data)
+      status, info = analyze_buffer(data)
+      raise EmptyPngError.new if info.eql? EMPTY_IMAGE
+      raise CorruptPngError.new info unless status == STATUS_OK
+
+      true
+    end
+
+    private
+
+    def do_analyze_file(path)
       Tempfile.open("captured-stream-") do |captured_stream|
         extra_msg = FFI::Buffer.alloc_out(EXTRA_MESSAGE_SIZE, 1, false)
         @@semaphore.lock
@@ -44,18 +82,12 @@ module PngCheck
         @@semaphore.unlock
         # we assume that pngcheck_file returns either captured_stream
         # or extra message but not both
-        [status, captured_stream.read + extra_msg.get_string(16)]
+
+        [status, captured_stream.read + extra_msg.get_string(0)]
       end
     end
 
-    def check_file(path)
-      status, info = analyze_file(path)
-      raise CorruptPngError.new info unless status == STATUS_OK
-
-      true
-    end
-
-    def analyze_buffer(data)
+    def do_analyze_buffer(data)
       Tempfile.open("captured-stream-") do |captured_stream|
         extra_msg = FFI::Buffer.alloc_out(EXTRA_MESSAGE_SIZE, 1, false)
         mem_buf = FFI::MemoryPointer.new(:char, data.bytesize)
@@ -64,15 +96,8 @@ module PngCheck
         status = pngcheck_buffer(mem_buf, data.bytesize, captured_stream.path,
                                  extra_msg)
         @@semaphore.unlock
-        [status, captured_stream.read + extra_msg.get_string(16)]
+        [status, captured_stream.read + extra_msg.get_string(0)]
       end
-    end
-
-    def check_buffer(data)
-      status, info = analyze_buffer(data)
-      raise CorruptPngError.new info unless status == STATUS_OK
-
-      true
     end
   end
 end

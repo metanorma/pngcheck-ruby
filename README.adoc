@@ -53,7 +53,7 @@ $ gem install pngcheck
 
 === Usage
 
-==== PngCeck status codes
+==== PngCheck status codes
 
 [source,ruby]
 ----
@@ -84,7 +84,7 @@ valid = PngCheck.check_file("spec/examples/correct.png")
 Where:
 
 * `valid` is `true` if the file is correct
-* otherwise an exception of type `PngCheck::CorruptPngError` is raised
+* otherwise an exception is raised. Possible exception types are `PngCheck::EmptyPngError`, `PngCheck::CorruptPngError`
 
 
 ==== Memory buffer processing
@@ -110,8 +110,8 @@ valid = PngCheck.check_buffer(data)
 
 Where:
 
-* `valid` is `true` if the file is correct
-* otherwise an exception of type `PngCheck::CorruptPngError` is raised
+* `valid` is `true` if the buffer is correct image
+* otherwise an exception is raised. Possible exception types are `PngCheck::EmptyPngError`, `PngCheck::CorruptPngError`
 
 
 ==== Pre-validation with libpng-ruby
