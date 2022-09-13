@@ -52,7 +52,7 @@ module PngCheck
     end
 
     def make_cmd
-      "#{cc} #{cflags} #{COMMON_FLAGS} -o #{@lib_filename} wrapper.c -lz"
+      "#{cc} #{cflags} #{COMMON_FLAGS} -o #{lib_filename} wrapper.c -lz"
     end
 
     def cook_if_not
