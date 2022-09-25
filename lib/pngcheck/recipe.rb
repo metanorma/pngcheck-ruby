@@ -66,6 +66,15 @@ module PngCheck
       FileUtils.touch(checkpoint)
     end
 
+    def download_file_file(uri, full_path)
+      if MiniPortile.windows?
+        FileUtils.mkdir_p File.dirname(full_path)
+        FileUtils.cp uri.to_s.delete_prefix("file:"), full_path
+      else
+        super
+      end
+    end
+
     def checkpoint
       File.join(@target, "#{name}-#{version}-#{host}.installed")
     end
