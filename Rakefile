@@ -21,9 +21,11 @@ task "gem:native:any" do
   sh "rake platform:any gem"
 end
 
-desc "Downoad pngcheck source"
+desc "Download pngcheck source"
 task :pngcheck do
-  sh "test -f #{PNGCHECK_LOCAL} || wget -nc -O #{PNGCHECK_LOCAL} #{PNGCHECK_URI}"
+  test_cmd = "test -f #{PNGCHECK_LOCAL}"
+  wget_cmd = "wget -nc -nv -O #{PNGCHECK_LOCAL} #{PNGCHECK_URI}"
+  sh "#{test_cmd} || #{wget_cmd}"
 end
 task compile: :pngcheck
 
