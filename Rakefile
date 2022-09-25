@@ -23,7 +23,7 @@ end
 
 desc "Downoad pngcheck source"
 task :pngcheck do
-  sh "wget -nc -O #{PNGCHECK_LOCAL} #{PNGCHECK_URI} || exit 0"
+  sh "test -f #{PNGCHECK_LOCAL} || wget -nc -O #{PNGCHECK_LOCAL} #{PNGCHECK_URI}"
 end
 task compile: :pngcheck
 
