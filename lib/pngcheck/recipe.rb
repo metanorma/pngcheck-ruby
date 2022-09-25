@@ -8,14 +8,16 @@ require "shellwords"
 require "open3"
 require_relative "version"
 
+ROOT = Pathname.new(File.expand_path("../..", __dir__))
+require "#{ROOT}/ext/layout.rb"
+
 module PngCheck
   class Recipe < MiniPortile
-    ROOT = Pathname.new(File.expand_path("../..", __dir__))
     COMMON_FLAGS = "-shared -fPIC -Wall -O -DUSE_ZLIB"
 
     def files_to_load_all
       @files << {
-        url: "http://www.libpng.org/pub/png/src/pngcheck-3.0.3.tar.gz",
+        url: "file:#{ROOT}/#{PNGCHECK_LOCAL}", # "http://www.libpng.org/pub/png/src/pngcheck-3.0.3.tar.gz"
         sha256: "c36a4491634af751f7798ea421321642f9590faa032eccb0dd5fb4533609dee6", # rubocop:disable Layout/LineLength
       }
     end
