@@ -16,6 +16,13 @@ RSpec.describe do
     #    puts "--> info: #{info}\n"
   end
 
+  it "analyzes MacOS screenshot" do
+    status, info = PngCheck.analyze_file("spec/examples/macos-screenshot.png")
+    expect(status).to eql PngCheck::STATUS_MAJOR_ERROR
+    expect(info).to include "data error"
+    #    puts "--> info: #{info}\n"
+  end
+
   it "analyzes broken file" do
     status, info = PngCheck.analyze_file("spec/examples/corrupt.png")
     expect(status).to eql PngCheck::STATUS_MAJOR_ERROR
