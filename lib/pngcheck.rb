@@ -5,21 +5,25 @@ require "tempfile"
 require_relative "pngcheck/version"
 
 module PngCheck
-  EMPTY_IMAGE = "Image is empty"
-
-  class CorruptPngError < StandardError; end
-
-  class EmptyPngError < StandardError
-    def initialize(msg = EMPTY_IMAGE)
-      super
-    end
-  end
-
   STATUS_OK = 0
   STATUS_WARNING = 1        # an error in some circumstances but not in all
   STATUS_MINOR_ERROR = 3    # minor spec errors (e.g., out-of-range values)
   STATUS_MAJOR_ERROR = 4    # file corruption, invalid chunk length/layout, etc.
   STATUS_CRITICAL_ERROR = 5 # unexpected EOF or other file(system) error
+
+  EMPTY_IMAGE = "Image is empty"
+
+  class CorruptPngError < StandardError
+    def initialize(msg, status = STATUS_MAJOR_ERROR)
+      super(msg)
+    end
+  end
+
+  class EmptyPngError < StandardError
+    def initialize(msg = EMPTY_IMAGE, status = STATUS_CRITICAL_ERROR)
+      super(msg)
+    end
+  end
 
   EXTRA_MESSAGE_SIZE = 1024
 
@@ -53,7 +57,7 @@ module PngCheck
     def check_file(path)
       status, info = analyze_file(path)
       raise EmptyPngError.new if info.eql? EMPTY_IMAGE
-      raise CorruptPngError.new info unless status == STATUS_OK
+      raise CorruptPngError.new(info, status) unless status == STATUS_OK
 
       true
     end
@@ -67,7 +71,7 @@ module PngCheck
     def check_buffer(data)
       status, info = analyze_buffer(data)
       raise EmptyPngError.new if info.eql? EMPTY_IMAGE
-      raise CorruptPngError.new info unless status == STATUS_OK
+      raise CorruptPngError.new(info, status) unless status == STATUS_OK
 
       true
     end

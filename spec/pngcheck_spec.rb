@@ -18,8 +18,8 @@ RSpec.describe do
 
   it "analyzes MacOS screenshot" do
     status, info = PngCheck.analyze_file("spec/examples/macos-screenshot.png")
-    expect(status).to eql PngCheck::STATUS_MAJOR_ERROR
-    expect(info).to include "data error"
+    expect(status).to eql PngCheck::STATUS_WARNING
+    expect(info).to include "illegal (unless recently approved) unknown, public chunk"
     #    puts "--> info: #{info}\n"
   end
 
