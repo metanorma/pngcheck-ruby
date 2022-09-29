@@ -10,11 +10,18 @@ concurrency:
   group: '${{ github.workflow }}-${{ github.job }}-${{ github.head_ref || github.ref_name }}'
   cancel-in-progress: true
 
+env:
+  BUNDLER_VER: 2.3.22
+# Forcing bundler version to ensure that it is consistent everywhere and
+# does not cause bundler gem reinstalls
+# bundler/rubygems 2.3.22 is a minimal requirement to support gnu/musl differentiation
+# https://github.com/rubygems/rubygems/pull/4488
+
 jobs:
-  test:
+# ----- RSpec -----
+  test-many:
     name: Test on Ruby ${{ matrix.ruby }} ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    continue-on-error: false
     strategy:
       fail-fast: false
       matrix:
@@ -27,6 +34,7 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
+          bundler: ${{ env.BUNDLER_VER }}
           bundler-cache: false
 
 # libpng is install into MSys environmtn whis is installed by setup-ruby
@@ -41,8 +49,28 @@ jobs:
       - run: bundle install
       - run: bundle exec rake spec
 
-  package:
+  test-alpine:
+    name: Test on alpine-latest
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:latest
+
+    steps:
+    - name: Install packages
+      run: apk --no-cache --upgrade add git ruby-dev libpng-dev build-base autoconf
+
+    - run: git config --global --add safe.directory $(pwd)
+    - uses: actions/checkout@v3
+
+    - run: gem install bundler:${{ env.BUNDLER_VER }} --no-document
+    - run: bundle install
+
+    - run: bundle exec rake spec
+
+# ----- Packaging -----
+  package-many:
     name: Package ${{ matrix.os }}, ${{ matrix.ruby }}, ${{ matrix.platform }}
+    needs: test-many
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -51,9 +79,9 @@ jobs:
           - os: ubuntu-latest
             platform: any
             ruby: '2.7'
-#          - os: ubuntu-latest
-#            platform: x86_64-linux
-#            ruby: '2.7'
+          - os: ubuntu-latest
+            platform: x86_64-linux
+            ruby: '2.7'
           - os: windows-latest
             platform: x64-mingw32
             ruby: '2.7'
@@ -63,9 +91,9 @@ jobs:
           - os: macos-latest
             platform: x86_64-darwin
             ruby: '2.7'
-#          - os: ubuntu-latest
-#            platform: aarch64-linux
-#            ruby: '2.7'
+          - os: ubuntu-latest
+            platform: aarch64-linux
+            ruby: '2.7'
           - os: macos-latest
             platform: arm64-darwin
             ruby: '2.7'
@@ -82,6 +110,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
+          bundler: ${{ env.BUNDLER_VER }}
           bundler-cache: false
 
       - name: Install windows tools for Ruby < 3.1
@@ -100,8 +129,62 @@ jobs:
           name: pkg
           path: pkg/*.gem
 
-  test-binary-package:
-    needs: package
+  package-linux-musl-x86_64:
+    name: Package linux-musl-x86_64
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:latest
+
+    steps:
+    - name: Install packages
+      run: apk --no-cache --upgrade add git ruby-dev libpng-dev build-base autoconf
+
+    - run: git config --global --add safe.directory $(pwd)
+    - uses: actions/checkout@v3
+
+    - run: |
+        gem install bundler:${{ env.BUNDLER_VER }} --no-document
+        bundle install
+        bundle exec rake gem:native:x86_64-linux-musl
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: pkg
+        path: pkg/*.gem
+
+  package-linux-musl-aarch64:
+    name: Package linux-musl-aarch64
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+# https://github.com/marketplace/actions/run-on-architecture
+    - uses: uraimo/run-on-arch-action@v2
+      name: Run commands
+      id: runcmd
+      with:
+        arch: aarch64
+        distro: alpine_latest
+        # Not required, but speeds up builds
+        githubToken: ${{ github.token }}
+        dockerRunArgs: --volume "${PWD}:/_a"
+        install: apk --no-cache --upgrade add git ruby-dev libpng-dev build-base autoconf
+        run: |
+          cd /_a
+          gem install bundler:${{ env.BUNDLER_VER }} --no-document
+          bundle install
+          bundle exec rake gem:native:aarch64-linux-musl
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: pkg
+        path: pkg/*.gem
+
+# ----- Test packages with native extensions -----
+  test-binary-many:
+    needs: package-many
     name: Test binary package ${{ matrix.os }}, ${{ matrix.ruby }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -116,6 +199,7 @@ jobs:
     - uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
+        bundler: ${{ env.BUNDLER_VER }}
         bundler-cache: false
 
     - uses: actions/download-artifact@v2
@@ -125,7 +209,6 @@ jobs:
 
     - name: Install binary gem
       run: |
-        ls pkg
         gem install -b pkg/pngcheck-$(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION")-$(ruby -e "puts RUBY_PLATFORM.sub(/darwin\d{2}$/, 'darwin')").gem
 # MacOS with have something like arm64-darwin19, others just aarch64-linux
 
@@ -134,9 +217,36 @@ jobs:
       run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
 # For some reason powershell gets crazy with the line above
 
-  test-ruby-package:
+  test-binary-alpine:
+    name: Test binary package on alpine-latest
+    needs:  package-linux-musl-x86_64
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:latest
+
+    steps:
+    - name: Install packages
+      run: apk --no-cache --upgrade add git ruby-dev build-base autoconf
+
+    - run: git config --global --add safe.directory $(pwd)
+    - uses: actions/checkout@v3
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: pkg
+        path: pkg
+
+    - run: gem install bundler:${{ env.BUNDLER_VER }} --no-document
+    - name: Install binary gem
+      run: gem install -b pkg/pngcheck-$(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION")-$(ruby -e "puts RUBY_PLATFORM").gem
+
+    - name: Test
+      run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
+
+# ----- Test ruby package -----
+  test-ruby-many:
     name: Test ruby platform package
-    needs: package
+    needs: package-many
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -150,6 +260,7 @@ jobs:
     - uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
+        bundler: ${{ env.BUNDLER_VER }}
         bundler-cache: false
 
     - uses: actions/download-artifact@v2
@@ -157,6 +268,7 @@ jobs:
         name: pkg
         path: pkg
 
+    - run: gem install bundler:${{ env.BUNDLER_VER }} --no-document
     - name: Install gem
       run: gem install -b pkg/pngcheck-$(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION").gem
 
@@ -164,92 +276,9 @@ jobs:
       shell: bash
       run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
 
-  test-alpine:
-    name: Test on alpine-latest
-    continue-on-error: false
-    strategy:
-      fail-fast: false    
-    runs-on: ubuntu-latest
-    container:
-      image: alpine:latest
-
-    steps:
-    - name: Install packages
-      run: |
-        apk --no-cache --upgrade add git ruby-dev libpng-dev build-base autoconf
-
-    - run: git config --global --add safe.directory $(pwd)
-    - uses: actions/checkout@v3
-
-    - run: gem install bundle
-    - run: bundle install
-
-    - run: bundle exec rake spec
-
-#  package-alpine:
-#    name: Package on alpine-latest
-#    needs: test-alpine
-#    continue-on-error: false
-#    strategy:
-#      fail-fast: false    
-#    runs-on: ubuntu-latest
-#    container:
-#      image: alpine:latest
-
-#    steps:
-#    - name: Install packages
-#      run: |
-#        apk --no-cache --upgrade add git ruby-dev libpng-dev build-base autoconf
-
-#    - run: git config --global --add safe.directory $(pwd)
-#    - uses: actions/checkout@v3
-
-#    - run: |
-#       gem install bundle
-#        bundle install
-#        bundle exec rake gem:native:x86_64-linux-musl
-#        bundle exec rake gem:native:any
-
-#    - uses: actions/upload-artifact@v2
-#      with:
-#        name: pkg
-#        path: pkg/*.gem
-
-#  test-binary-alpine:
-#    name: Test binary package on alpine-latest
-#    needs: package-alpine
-#    continue-on-error: false
-#    strategy:
-#      fail-fast: false    
-#    runs-on: ubuntu-latest
-#    container:
-#      image: alpine:latest
-
-#    steps:
-#    - name: Install packages
-#      run: |
-#        apk --no-cache --upgrade add git ruby-dev build-base autoconf
-
-#    - run: git config --global --add safe.directory $(pwd)
-#    - uses: actions/checkout@v3
-
-#    - uses: actions/download-artifact@v2
-#      with:
-#        name: pkg
-#        path: pkg
-
-#    - name: Install binary gem
-#      run: gem install -b pkg/pngcheck-$(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION")-$(ruby -e "puts RUBY_PLATFORM").gem
-
-#    - name: Test
-#      run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
-
-  test-ruby-package-alpine:
+  test-ruby-alpine:
     name: Test ruby platform package on alpine-latest
-    needs: package
-    continue-on-error: false
-    strategy:
-      fail-fast: false    
+    needs: package-many
     runs-on: ubuntu-latest
     container:
       image: alpine:latest
@@ -267,15 +296,17 @@ jobs:
         name: pkg
         path: pkg
 
+    - run: gem install bundler:${{ env.BUNDLER_VER }} --no-document
     - name: Install ruby gem
       run: gem install -b pkg/pngcheck-$(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION").gem
 
     - name: Test
       run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
 
+# ----- Release -----
   release:
     name: Release gem
-    needs: [ test, test-alpine, test-binary-package, test-ruby-package, test-ruby-package-alpine ]
+    needs: [ test-binary-many, test-binary-alpine, test-ruby-many, test-ruby-alpine, test-alpine, package-linux-musl-x86_64, package-linux-musl-aarch64 ]
     runs-on: ubuntu-latest
     if: contains(github.ref, 'refs/tags/v')
     steps:
@@ -300,53 +331,5 @@ jobs:
         gem signin
         mkdir tmp
         for gem in pkg/*.gem; do gem push -V $gem; done
-#        mv pkg/*musl.gem tmp
-#        for gem in tmp/*.gem; do gem push -V $gem; done
 
-#  test-rubygems-musl:
-#    name: Test rubygems bindings on alpine-latest
-#    if: contains(github.ref, 'refs/tags/v')
-#    needs: release
-#    continue-on-error: true
-#    runs-on: ubuntu-latest
-#    container:
-#      image: alpine:latest
-
-#    steps:
-#    - name: Install packages
-#      run: |
-#        apk --no-cache --upgrade add git ruby-dev build-base autoconf
-
-#    - run: git config --global --add safe.directory $(pwd)
-#    - uses: actions/checkout@v3
-
-#    - name: Install binary gem
-#      run: gem install pngcheck -v $(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION")
-
-#    - name: Test
-#      run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
-
-#  test-rubygems-gnu:
-#    name: Test rubygems bindings on ubuntu-latest
-#    if: contains(github.ref, 'refs/tags/v')
-#    needs: release
-#    continue-on-error: true
-#    strategy:
-#      fail-fast: false    
-#      matrix:
-#        ruby: [ '2.7', '3.0', '3.1' ]
-#    runs-on: ubuntu-latest
-
-#    steps:
-#    - uses: actions/checkout@v3
-
-#    - uses: ruby/setup-ruby@v1
-#      with:
-#        ruby-version: ${{ matrix.ruby }}
-#        bundler-cache: false
-
-#    - name: Install binary gem
-#      run: gem install pngcheck -v $(ruby -I lib -r pngcheck/version -e "puts PngCheck::VERSION")
-
-#    - name: Test
-#      run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
+#        for gem in pkg/*.gem; do echo "gem push -V $gem"; done
