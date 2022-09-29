@@ -75,6 +75,10 @@ module PngCheck
       end
     end
 
+    def tmp_path
+      "tmp/#{@host}/ports"
+    end
+
     def checkpoint
       File.join(@target, "#{name}-#{version}-#{host}.installed")
     end
