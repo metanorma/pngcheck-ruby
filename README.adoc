@@ -113,6 +113,8 @@ Where:
 * `valid` is `true` if the buffer is correct image
 * otherwise an exception is raised. Possible exception types are `PngCheck::EmptyPngError`, `PngCheck::CorruptPngError`
 
+Both exception classes have additional status attribute that is set to one of STATUX_XXX codes described above. We believe that
+exceptions with STATUS_WARNING can be ignored in the majority of applications.
 
 ==== Pre-validation with libpng-ruby
 
