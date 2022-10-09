@@ -14,14 +14,19 @@ module PngCheck
   EMPTY_IMAGE = "Image is empty"
 
   class CorruptPngError < StandardError
-    def initialize(msg, status = STATUS_MAJOR_ERROR)
+    def initialize(msg, sts = STATUS_MAJOR_ERROR)
       super(msg)
+      @status = sts
+    end
+
+    def status
+      @status
     end
   end
 
-  class EmptyPngError < StandardError
-    def initialize(msg = EMPTY_IMAGE, status = STATUS_CRITICAL_ERROR)
-      super(msg)
+  class EmptyPngError < CorruptPngError
+    def initialize(msg = EMPTY_IMAGE)
+      super(msg, STATUS_CRITICAL_ERROR)
     end
   end
 

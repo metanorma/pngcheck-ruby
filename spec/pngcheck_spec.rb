@@ -16,10 +16,10 @@ RSpec.describe do
     #    puts "--> info: #{info}\n"
   end
 
-  it "analyzes MacOS screenshot" do
+  it "sets STATUS_WARNING for MacOS screenshot" do
     status, info = PngCheck.analyze_file("spec/examples/macos-screenshot.png")
     expect(status).to eql PngCheck::STATUS_WARNING
-    expect(info).to include "illegal (unless recently approved) unknown, public chunk"
+    expect(info).to include "illegal (unless recently approved) unknown"
     #    puts "--> info: #{info}\n"
   end
 
@@ -45,21 +45,24 @@ RSpec.describe do
     expect(PngCheck.check_file("spec/examples/correct2.png")).to eql true
   end
   it "raises an exception on corrupt file check" do
-    expect do
-      PngCheck.check_file("spec/examples/corrupt.png")
-    end.to raise_error(PngCheck::CorruptPngError)
+    PngCheck.check_file("spec/examples/corrupt.png")
+    expect(false).to be true
+  rescue PngCheck::CorruptPngError => e
+    expect(e.status).to eql PngCheck::STATUS_MAJOR_ERROR
   end
 
   it "raises an exception on empty file check" do
-    expect do
-      PngCheck.check_file("spec/examples/empty.png")
-    end.to raise_error(PngCheck::EmptyPngError)
+    PngCheck.check_file("spec/examples/empty.png")
+    expect(false).to be true
+  rescue PngCheck::EmptyPngError => e
+    expect(e.status).to eql PngCheck::STATUS_CRITICAL_ERROR
   end
 
   it "raises an exception on missing file check" do
-    expect do
-      PngCheck.check_file("spec/examples/nofile.png")
-    end.to raise_error(PngCheck::CorruptPngError)
+    PngCheck.check_file("spec/examples/nofile.png")
+    expect(false).to be true
+  rescue PngCheck::CorruptPngError => e
+    expect(e.status).to eql PngCheck::STATUS_CRITICAL_ERROR
   end
 
   it "analyzes correct buffer" do
@@ -100,40 +103,61 @@ RSpec.describe do
     expect(PngCheck.check_buffer(encoded)).to eql true
   end
 
+  it "sets STATUS_WARNING for a buffer generated from MacOS screenshot" do
+    encoded = File.binread("spec/examples/macos-screenshot.png")
+    status, info = PngCheck.analyze_buffer(encoded)
+    expect(status).to eql PngCheck::STATUS_WARNING
+    expect(info).to include "illegal (unless recently approved) unknown"
+  end
+
   it "raises an exception on corrupt buffer check" do
     encoded = File.binread("spec/examples/corrupt.png")
-    expect do
-      PngCheck.check_buffer(encoded)
-    end.to raise_error(PngCheck::CorruptPngError)
+    PngCheck.check_buffer(encoded)
+    expect(false).to be true
+  rescue PngCheck::CorruptPngError => e
+    expect(e.status).to eql PngCheck::STATUS_MAJOR_ERROR
   end
 
   it "raises an exception on trash buffer check" do
     encoded = "[this is just a string]"
-    expect do
-      PngCheck.check_buffer(encoded)
-    end.to raise_error(PngCheck::CorruptPngError)
+    PngCheck.check_buffer(encoded)
+    expect(false).to be true
+  rescue PngCheck::CorruptPngError => e
+    expect(e.status).to eql PngCheck::STATUS_CRITICAL_ERROR
   end
 
   it "raises an exception on empty buffer check" do
     encoded = ""
-    expect do
-      PngCheck.check_buffer(encoded)
-    end.to raise_error(PngCheck::EmptyPngError)
+    PngCheck.check_buffer(encoded)
+    expect(false).to be true
+  rescue PngCheck::EmptyPngError => e
+    expect(e.status).to eql PngCheck::STATUS_CRITICAL_ERROR
   end
 
-  require "png"
+  it "raises an exception on macos screenshot with status equal to STATUS_WARNING" do
+    encoded = File.binread("spec/examples/macos-screenshot.png")
+    PngCheck.check_buffer(encoded)
+    expect(false).to be true
+  rescue PngCheck::CorruptPngError => e
+    expect(e.status).to eql PngCheck::STATUS_WARNING
+  end
 
-  it "can be used with libpng-ruby" do
-    encoded = File.binread("spec/examples/correct.png")
-    begin
-      expect(PngCheck.check_buffer(encoded)).to eql true
-      dec = PNG::Decoder.new
-      raw = dec << encoded
-    rescue PngCheck::CorruptPngError => e
-      puts "Exception #{e.message}"
+  begin
+    require "png"
+    it "can be used with libpng-ruby" do
+      encoded = File.binread("spec/examples/correct.png")
+      begin
+        expect(PngCheck.check_buffer(encoded)).to eql true
+        dec = PNG::Decoder.new
+        raw = dec << encoded
+      rescue PngCheck::CorruptPngError => e
+        puts "Exception #{e.message}"
+      end
+      f = "aaaaaaaaa"
+      expect(raw.unpack(f)).to start_with
+      "\xF4\xD1\r\xF4\xD1\r\xF4\xD1\r\xF4".unpack(f)
     end
-    f = "aaaaaaaaa"
-    expect(raw.unpack(f)).to start_with
-    "\xF4\xD1\r\xF4\xD1\r\xF4\xD1\r\xF4".unpack(f)
+  rescue LoadError => e
+    puts "Failed to load libpng-ruby, skipping compatibility test"
   end
 end
