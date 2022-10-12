@@ -18,7 +18,7 @@ module PngCheck
     def files_to_load_all
       @files << {
         url: "file:#{ROOT}/#{PNGCHECK_LOCAL}",
-        sha256: "f8ff6033dc0008a90a468213a96ac5d72476b1e59378e267341fcf3734ebb2b3", # rubocop:disable Layout/LineLength
+        sha256: PNGCHECK_SHA, 
       }
     end
 
@@ -33,7 +33,7 @@ module PngCheck
     end
 
     def initialize
-      super("pngcheck", PNGCHECK_VER)
+      super("pngcheck", PngCheck::VERSION)
       files_to_load_all
       files_to_load_cross
       @target = ROOT.join(@target).to_s

@@ -59,6 +59,10 @@ File.readlines(".cross_rubies", chomp: true).each do |platform|
   end
 end
 
+task "update:sha" do
+  
+end
+
 require "rake/clean"
 
 CLOBBER.include("pkg")
