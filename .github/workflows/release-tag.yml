@@ -1,0 +1,47 @@
+name: release-tag
+
+on:
+  repository_dispatch:
+    types: [ metanorma/pngcheck ]
+
+jobs:
+  prepare-ieee:
+    uses: ./.github/workflows/prepare.yml
+    secrets:
+      pat_token: ${{ secrets.METANORMA_CI_PAT_TOKEN }}
+
+  tag_repo:
+    runs-on: ubuntu-18.04
+    if: startsWith(github.event.client_payload.ref, 'refs/tags/metanorma-v')
+    needs: [ prepare-ieee ]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.METANORMA_CI_PAT_TOKEN }}
+
+      - run: |
+          git config --global user.name "metanorma-ci"
+          git config --global user.email "metanorma-ci@users.noreply.github.com"
+
+      - run: echo pngcheck_VERSION=${pngcheck_TAG#*/metanorma-v} >> ${GITHUB_ENV}
+        env:
+          pngcheck_TAG: ${{ github.event.client_payload.ref }}
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '2.7'
+          bundler-cache: true
+
+      - run: gem install gem-release
+
+      - run: gem bump --version ${pngcheck_VERSION} --no-commit
+
+      - run: |
+          sed -i -r 's/^(PNGCHECK_SHA =).*/\1 "${{ github.event.client_payload.sha256 }}"/' ext/layout.rb
+
+      - name: Push commit and tag
+        run: |
+          git add ext/layout.rb *.gemspec
+          git commit -m "Bump version to ${pngcheck_VERSION}"
+          git tag v${pngcheck_VERSION}
+          git push origin HEAD:${GITHUB_REF} --tags
