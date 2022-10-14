@@ -12,7 +12,7 @@ Gemfile.lock
 *.dll
 *.dylib
 *.so
-ext/pngcheck-3.0.3.tar.gz
+ext/pngcheck-*.tar.gz
 
 # remote file cache
 .rubocop-*

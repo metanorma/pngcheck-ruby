@@ -19,7 +19,7 @@ Gem::Specification.new do |spec| # rubocop:disable Metrics/BlockLength
 
   spec.files = Dir.chdir(File.expand_path(__dir__)) do
     `git ls-files -z`.split("\x0").reject do |f|
-      (f == __FILE__) || f.match(%r{\A(?:(?:test|spec|features)/|\.(?:git|github|travis|circleci)|appveyor)})  # rubocop:disable Layout/LineLength
+      (f == __FILE__) || f.match(%r{\A(?:(?:test|spec|features|bin)/|\.(?:git|github|travis|circleci)|appveyor)})  # rubocop:disable Layout/LineLength
     end
   end
   spec.bindir = "bin"
