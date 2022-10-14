@@ -124,7 +124,7 @@ jobs:
       - run: bundle install
       - run: bundle exec rake gem:native:${{ matrix.platform }}
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: pkg
           path: pkg/*.gem
@@ -148,7 +148,7 @@ jobs:
         bundle install
         bundle exec rake gem:native:x86_64-linux-musl
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: pkg
         path: pkg/*.gem
@@ -179,7 +179,7 @@ jobs:
           bundle install
           bundle exec rake gem:native:aarch64-linux-musl
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: pkg
         path: pkg/*.gem
@@ -204,7 +204,7 @@ jobs:
         bundler: ${{ env.BUNDLER_VER }}
         bundler-cache: false
 
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v3
       with:
         name: pkg
         path: pkg
@@ -233,7 +233,7 @@ jobs:
     - run: git config --global --add safe.directory $(pwd)
     - uses: actions/checkout@v3
 
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v3
       with:
         name: pkg
         path: pkg
@@ -265,7 +265,7 @@ jobs:
         bundler: ${{ env.BUNDLER_VER }}
         bundler-cache: false
 
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v3
       with:
         name: pkg
         path: pkg
@@ -293,7 +293,7 @@ jobs:
     - run: git config --global --add safe.directory $(pwd)
     - uses: actions/checkout@v3
 
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v3
       with:
         name: pkg
         path: pkg
@@ -314,7 +314,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v3
       with:
         name: pkg
         path: pkg
