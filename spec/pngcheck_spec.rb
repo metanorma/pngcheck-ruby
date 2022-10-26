@@ -134,7 +134,7 @@ RSpec.describe do
     expect(e.status).to eql PngCheck::STATUS_CRITICAL_ERROR
   end
 
-  it "raises an exception on macos screenshot with status equal to STATUS_WARNING" do
+  it "raises an exception(STATUS_WARNING) on macos screenshot" do
     encoded = File.binread("spec/examples/macos-screenshot.png")
     PngCheck.check_buffer(encoded)
     expect(false).to be true
@@ -157,7 +157,7 @@ RSpec.describe do
       expect(raw.unpack(f)).to start_with
       "\xF4\xD1\r\xF4\xD1\r\xF4\xD1\r\xF4".unpack(f)
     end
-  rescue LoadError => e
+  rescue LoadError
     puts "Failed to load libpng-ruby, skipping compatibility test"
   end
 end

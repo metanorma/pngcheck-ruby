@@ -11,7 +11,7 @@ Gem::Specification.new do |spec| # rubocop:disable Metrics/BlockLength
   spec.summary  = "Ruby interface to pngcheck."
   spec.homepage = "https://github.com/metanorma/pngcheck-ruby"
   spec.license  = "BSD-2-Clause"
-  spec.required_ruby_version = ">= 2.7.0"
+  spec.required_ruby_version = ">= 2.6.0"
 
   spec.metadata["homepage_uri"]    = spec.homepage
   spec.metadata["source_code_uri"] = spec.homepage
