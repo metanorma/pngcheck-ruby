@@ -26,8 +26,8 @@ module PngCheck
       if target_platform.eql?("aarch64-linux") &&
           !host_platform.eql?("aarch64-linux")
         @files << {
-          url: "http://ports.ubuntu.com/pool/main/z/zlib/zlib1g-dev_1.2.11.dfsg-2ubuntu1.3_arm64.deb", # rubocop:disable Layout/LineLength
-          sha256: "0ebadc1ff2a70f0958d4e8e21ffa97d9fa4da23555eaae87782e963044a26fcf", # rubocop:disable Layout/LineLength
+          url: "http://ports.ubuntu.com/pool/main/z/zlib/zlib1g-dev_1.2.11.dfsg-2ubuntu1.5_arm64.deb", # rubocop:disable Layout/LineLength
+          sha256: "aca13b896f90ca536831ccbd6d11af35e4205656919e278a24029ddd00ddff3b", # rubocop:disable Layout/LineLength
         }
       end
     end
