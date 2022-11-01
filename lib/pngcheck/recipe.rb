@@ -33,7 +33,7 @@ module PngCheck
     end
 
     def initialize
-      super("pngcheck", PngCheck::VERSION)
+      super("pngcheck", PNGCHECK_VERSION)
       files_to_load_all
       files_to_load_cross
       @target = ROOT.join(@target).to_s
