@@ -8,7 +8,6 @@ jobs:
   tag_repo:
     runs-on: ubuntu-latest
     if: startsWith(github.event.client_payload.ref, 'refs/tags/metanorma-v')
-    needs: [ prepare-ieee ]
     steps:
       - uses: actions/checkout@v3
         with:
