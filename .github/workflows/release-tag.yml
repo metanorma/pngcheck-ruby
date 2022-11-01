@@ -5,13 +5,8 @@ on:
     types: [ metanorma/pngcheck ]
 
 jobs:
-  prepare-ieee:
-    uses: ./.github/workflows/prepare.yml
-    secrets:
-      pat_token: ${{ secrets.METANORMA_CI_PAT_TOKEN }}
-
   tag_repo:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     if: startsWith(github.event.client_payload.ref, 'refs/tags/metanorma-v')
     needs: [ prepare-ieee ]
     steps:
@@ -38,6 +33,7 @@ jobs:
 
       - run: |
           sed -i -r 's/^(PNGCHECK_SHA =).*/\1 "${{ github.event.client_payload.sha256 }}"/' ext/layout.rb
+          sed -i -r 's/^(PNGCHECK_VERSION =).*/\1 PngCheck::VERSION/' ext/layout.rb
 
       - name: Push commit and tag
         run: |
