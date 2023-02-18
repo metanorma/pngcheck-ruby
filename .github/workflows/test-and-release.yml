@@ -18,26 +18,33 @@ env:
 # https://github.com/rubygems/rubygems/pull/4488
 
 jobs:
-# ----- RSpec -----
+  prepare:
+    uses: metanorma/ci/.github/workflows/prepare-rake.yml@main
+
   test-many:
-    name: Test on Ruby ${{ matrix.ruby }} ${{ matrix.os }}
+    name: Test on Ruby ${{ matrix.ruby.version }} ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+
+    needs: prepare
+    if: needs.prepare.outputs.push-for-tag != 'true'
+
+    continue-on-error: ${{ matrix.ruby.experimental }}
     strategy:
       fail-fast: false
-      matrix:
-        ruby: [ '2.7', '3.0', '3.1' ]
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
+      max-parallel: 5
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
 
     steps:
       - uses: actions/checkout@v3
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ${{ matrix.ruby }}
+          ruby-version: ${{ matrix.ruby.version }}
+          rubygems: ${{ matrix.ruby.rubygems }}
           bundler: ${{ env.BUNDLER_VER }}
-          bundler-cache: false
+          bundler-cache: true
 
-# libpng is install into MSys environmtn whis is installed by setup-ruby
+      # libpng is install into MSys environmtn whis is installed by setup-ruby
       - name: Install windows tools for Ruby < 3.1
         if: matrix.os == 'windows-latest' && matrix.ruby != '3.1'
         run: pacman --noconfirm -S mingw-w64-x86_64-libpng
@@ -46,7 +53,6 @@ jobs:
         if: matrix.os == 'windows-latest' && matrix.ruby == '3.1'
         run: pacman --noconfirm -S mingw-w64-ucrt-x86_64-libpng
 
-      - run: bundle install
       - run: bundle exec rake spec
 
   test-alpine:
@@ -78,25 +84,25 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: any
-            ruby: '2.7'
+            ruby: ${{ needs.prepare.outputs.default-ruby-version }}
           - os: ubuntu-latest
             platform: x86_64-linux
-            ruby: '2.7'
+            ruby: ${{ needs.prepare.outputs.default-ruby-version }}
           - os: windows-latest
             platform: x64-mingw32
-            ruby: '2.7'
+            ruby: ${{ needs.prepare.outputs.default-ruby-version }}
           - os: windows-latest
             platform: x64-mingw-ucrt
-            ruby: '3.1'
+            ruby: ${{ needs.prepare.outputs.default-ruby-version }}
           - os: macos-latest
             platform: x86_64-darwin
-            ruby: '2.7'
+            ruby: ${{ needs.prepare.outputs.default-ruby-version }}
           - os: ubuntu-latest
             platform: aarch64-linux
-            ruby: '2.7'
+            ruby: ${{ needs.prepare.outputs.default-ruby-version }}
           - os: macos-latest
             platform: arm64-darwin
-            ruby: '2.7'
+            ruby: ${{ needs.prepare.outputs.default-ruby-version }}
     steps:
       - uses: actions/checkout@v3
 
@@ -111,7 +117,7 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler: ${{ env.BUNDLER_VER }}
-          bundler-cache: false
+          bundler-cache: true
 
       - name: Install windows tools for Ruby < 3.1
         if: matrix.os == 'windows-latest' && matrix.ruby != '3.1'
@@ -121,7 +127,6 @@ jobs:
         if: matrix.os == 'windows-latest' && matrix.ruby == '3.1'
         run: pacman --noconfirm -S mingw-w64-ucrt-x86_64-libpng
 
-      - run: bundle install
       - run: bundle exec rake gem:native:${{ matrix.platform }}
 
       - uses: actions/upload-artifact@v3
@@ -186,21 +191,25 @@ jobs:
 
 # ----- Test packages with native extensions -----
   test-binary-many:
-    needs: package-many
-    name: Test binary package ${{ matrix.os }}, ${{ matrix.ruby }}
+    name: Test binary package on Ruby ${{ matrix.ruby.version }} ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+
+    needs: [prepare, package-many]
+    if: needs.prepare.outputs.push-for-tag != 'true'
+
+    continue-on-error: ${{ matrix.ruby.experimental }}
     strategy:
       fail-fast: false
-      matrix:
-        os: [ windows-latest, macos-latest ]
-        ruby: [ '2.7', '3.0', '3.1' ]
+      max-parallel: 5
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
 
     steps:
     - uses: actions/checkout@v3
 
     - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: ${{ matrix.ruby }}
+        ruby-version: ${{ matrix.ruby.version }}
+        rubygems: ${{ matrix.ruby.rubygems }}
         bundler: ${{ env.BUNDLER_VER }}
         bundler-cache: false
 
@@ -245,23 +254,26 @@ jobs:
     - name: Test
       run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
 
-# ----- Test ruby package -----
   test-ruby-many:
-    name: Test ruby platform package
-    needs: package-many
+    name: Test platform package on Ruby ${{ matrix.ruby.version }} ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+
+    needs: [prepare, package-many]
+    if: needs.prepare.outputs.push-for-tag != 'true'
+
+    continue-on-error: ${{ matrix.ruby.experimental }}
     strategy:
       fail-fast: false
-      matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
-        ruby: [ '2.7', '3.0', '3.1' ]
+      max-parallel: 5
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
 
     steps:
     - uses: actions/checkout@v3
 
     - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: ${{ matrix.ruby }}
+        ruby-version: ${{ matrix.ruby.version }}
+        rubygems: ${{ matrix.ruby.rubygems }}
         bundler: ${{ env.BUNDLER_VER }}
         bundler-cache: false
 
@@ -305,7 +317,6 @@ jobs:
     - name: Test
       run:  ruby -rpngcheck -e "puts PngCheck.check_file('spec/examples/correct.png')"
 
-# ----- Release -----
   release:
     name: Release gem
     needs: [ test-binary-many, test-binary-alpine, test-ruby-many, test-ruby-alpine ]
@@ -319,19 +330,8 @@ jobs:
         name: pkg
         path: pkg
 
-    - name: Publish to rubygems.org
-      env:
-        RUBYGEMS_API_KEY: ${{secrets.METANORMA_CI_RUBYGEMS_API_KEY}}
-      run: |
-        mkdir -p ~/.gem
-        touch ~/.gem/credentials
-        cat > ~/.gem/credentials << EOF
-        ---
-        :rubygems_api_key: ${RUBYGEMS_API_KEY}
-        EOF
-        chmod 0600 ~/.gem/credentials
-        gem signin
-        mkdir tmp
-        for gem in pkg/*.gem; do gem push -V $gem; done
-
-#        for gem in pkg/*.gem; do echo "gem push -V $gem"; done
+    - uses: actions-mn/gem-release@main
+      with:
+        api-key: ${{ secrets.METANORMA_CI_RUBYGEMS_API_KEY }}
+        release-command: |
+          for gem in pkg/*.gem; do gem push -V $gem; done
