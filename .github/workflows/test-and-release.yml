@@ -37,21 +37,23 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      # libpng is install into MSys environmtn whis is installed by setup-ruby
+      - name: Install libpng
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          if [ "${{ matrix.ruby.version }}" -gt "3.0" ]; then
+            pacman --noconfirm -S mingw-w64-ucrt-x86_64-libpng
+          else
+            pacman --noconfirm -S mingw-w64-x86_64-libpng
+          fi
+
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby.version }}
           rubygems: ${{ matrix.ruby.rubygems }}
           bundler: ${{ env.BUNDLER_VER }}
           bundler-cache: true
-
-      # libpng is install into MSys environmtn whis is installed by setup-ruby
-      - name: Install windows tools for Ruby < 3.1
-        if: matrix.os == 'windows-latest' && matrix.ruby != '3.1'
-        run: pacman --noconfirm -S mingw-w64-x86_64-libpng
-
-      - name: Install windows tools for Ruby = 3.1
-        if: matrix.os == 'windows-latest' && matrix.ruby == '3.1'
-        run: pacman --noconfirm -S mingw-w64-ucrt-x86_64-libpng
 
       - run: bundle exec rake spec
 
