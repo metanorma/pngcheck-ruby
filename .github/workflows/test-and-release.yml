@@ -37,23 +37,20 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # libpng is install into MSys environmtn whis is installed by setup-ruby
-      - name: Install libpng
-        if: matrix.os == 'windows-latest'
-        shell: bash
-        run: |
-          if [ "${{ matrix.ruby.version }}" -gt "3.0" ]; then
-            pacman --noconfirm -S mingw-w64-ucrt-x86_64-libpng
-          else
-            pacman --noconfirm -S mingw-w64-x86_64-libpng
-          fi
-
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby.version }}
           rubygems: ${{ matrix.ruby.rubygems }}
           bundler: ${{ env.BUNDLER_VER }}
-          bundler-cache: true
+          bundler-cache: ${{ matrix.os != 'windows-latest' }}
+
+      - name: Install libpng # libpng is install into MSys environmtn whis is installed by setup-ruby
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          pacman -S --noconfirm pactoys
+          pacboy sync --noconfirm libpng:p
+          bundle install
 
       - run: bundle exec rake spec
 
@@ -78,7 +75,7 @@ jobs:
 # ----- Packaging -----
   package-many:
     name: Package ${{ matrix.os }}, ${{ matrix.ruby }}, ${{ matrix.platform }}
-    needs: test-many
+    needs: [prepare, test-many]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -119,15 +116,15 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler: ${{ env.BUNDLER_VER }}
-          bundler-cache: true
+          bundler-cache: ${{ matrix.os != 'windows-latest' }}
 
-      - name: Install windows tools for Ruby < 3.1
-        if: matrix.os == 'windows-latest' && matrix.ruby != '3.1'
-        run: pacman --noconfirm -S mingw-w64-x86_64-libpng
-
-      - name: Install windows tools for Ruby = 3.1
-        if: matrix.os == 'windows-latest' && matrix.ruby == '3.1'
-        run: pacman --noconfirm -S mingw-w64-ucrt-x86_64-libpng
+      - name: Install libpng # libpng is install into MSys environmtn whis is installed by setup-ruby
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          pacman -S --noconfirm pactoys
+          pacboy sync --noconfirm libpng:p
+          bundle install
 
       - run: bundle exec rake gem:native:${{ matrix.platform }}
 
