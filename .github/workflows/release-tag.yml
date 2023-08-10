@@ -5,8 +5,12 @@ on:
     types: [ metanorma/pngcheck ]
 
 jobs:
-  tag_repo:
+  prepare:
+    uses: metanorma/ci/.github/workflows/prepare-rake.yml@main
+
+  tag-repo:
     runs-on: ubuntu-latest
+    needs: prepare
     if: startsWith(github.event.client_payload.ref, 'refs/tags/metanorma-v')
     steps:
       - uses: actions/checkout@v3
@@ -23,12 +27,12 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '2.7'
+          ruby-version: ${{ needs.prepare.outputs.default-ruby-version }}
           bundler-cache: true
 
-      - run: gem install gem-release
-
-      - run: gem bump --version ${pngcheck_VERSION} --no-commit
+      - run: |
+          gem install gem-release
+          gem bump --version ${pngcheck_VERSION} --no-commit
 
       - run: |
           sed -i -r 's/^(PNGCHECK_SHA =).*/\1 "${{ github.event.client_payload.sha256 }}"/' ext/layout.rb
