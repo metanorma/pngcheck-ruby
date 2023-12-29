@@ -2,7 +2,7 @@ inherit_from:
   - https://raw.githubusercontent.com/riboseinc/oss-guides/master/ci/rubocop.yml
 
 AllCops:
-  NewCops: 'enable'
+  NewCops: enable
   TargetRubyVersion: 2.7
   SuggestExtensions: false
 
