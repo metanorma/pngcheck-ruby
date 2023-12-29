@@ -19,7 +19,7 @@ Gem::Specification.new do |spec| # rubocop:disable Metrics/BlockLength
 
   spec.files = Dir.chdir(File.expand_path(__dir__)) do
     `git ls-files -z`.split("\x0").reject do |f|
-      (f == __FILE__) || f.match(%r{\A(?:(?:test|spec|features|bin)/|\.(?:git|github|travis|circleci)|appveyor)})  # rubocop:disable Layout/LineLength
+      (f == __FILE__) || f.match(%r{\A(?:(?:test|spec|features|bin)/|\.(?:git|github|travis|circleci)|appveyor)}) # rubocop:disable Layout/LineLength
     end
   end
   spec.bindir = "bin"
@@ -33,7 +33,8 @@ Gem::Specification.new do |spec| # rubocop:disable Metrics/BlockLength
 
   spec.add_development_dependency "libpng-ruby", "~> 0.6"
   spec.add_development_dependency "rspec", "~> 3.0"
-  spec.add_development_dependency "rubocop", "~> 1.4"
+  spec.add_development_dependency "rubocop", "~> 1.22"
+  spec.add_development_dependency "rubocop-performance", "~> 1.19"
 
   spec.extensions = ["ext/extconf.rb"]
 end
