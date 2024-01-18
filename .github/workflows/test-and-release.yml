@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BUNDLER_VER: 2.3.22
+  BUNDLER_VER: 2.4.22
 # Forcing bundler version to ensure that it is consistent everywhere and
 # does not cause bundler gem reinstalls
 # bundler/rubygems 2.3.22 is a minimal requirement to support gnu/musl differentiation
@@ -35,7 +35,7 @@ jobs:
       matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: ruby/setup-ruby@v1
         with:
@@ -62,10 +62,10 @@ jobs:
 
     steps:
     - name: Install packages
-      run: apk --no-cache --upgrade add git ruby-dev libpng-dev build-base autoconf
+      run: apk --no-cache --upgrade add git ruby-dev libpng-dev build-base autoconf linux-headers
 
     - run: git config --global --add safe.directory $(pwd)
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - run: gem install bundler:${{ env.BUNDLER_VER }} --no-document
     - run: bundle install
@@ -103,7 +103,7 @@ jobs:
             platform: arm64-darwin
             ruby: ${{ needs.prepare.outputs.default-ruby-version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install linux-aarch64 tools
         if: startsWith(matrix.os, 'ubuntu') && startsWith(matrix.platform, 'aarch64')
@@ -142,7 +142,7 @@ jobs:
 
     steps:
     - name: Install packages
-      run: apk --no-cache --upgrade add git ruby-dev libpng-dev build-base autoconf
+      run: apk --no-cache --upgrade add git ruby-dev libpng-dev build-base autoconf linux-headers
 
     - run: git config --global --add safe.directory $(pwd)
     - uses: actions/checkout@v3
@@ -164,7 +164,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
 # https://github.com/marketplace/actions/run-on-architecture
     - uses: uraimo/run-on-arch-action@v2
@@ -176,7 +176,7 @@ jobs:
         # Not required, but speeds up builds
         githubToken: ${{ github.token }}
         dockerRunArgs: --volume "${PWD}:/_a"
-        install: apk --no-cache --upgrade add git ruby-dev libpng-dev build-base autoconf
+        install: apk --no-cache --upgrade add git ruby-dev libpng-dev build-base autoconf linux-headers
         run: |
           cd /_a
           gem install bundler:${{ env.BUNDLER_VER }} --no-document
@@ -203,7 +203,7 @@ jobs:
       matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: ruby/setup-ruby@v1
       with:
@@ -236,10 +236,10 @@ jobs:
 
     steps:
     - name: Install packages
-      run: apk --no-cache --upgrade add git ruby-dev build-base autoconf
+      run: apk --no-cache --upgrade add git ruby-dev build-base autoconf linux-headers
 
     - run: git config --global --add safe.directory $(pwd)
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: actions/download-artifact@v3
       with:
@@ -267,7 +267,7 @@ jobs:
       matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: ruby/setup-ruby@v1
       with:
@@ -299,10 +299,10 @@ jobs:
     steps:
     - name: Install packages
       run: |
-        apk --no-cache --upgrade add git ruby-dev build-base autoconf zlib-dev
+        apk --no-cache --upgrade add git ruby-dev build-base autoconf zlib-dev linux-headers
 
     - run: git config --global --add safe.directory $(pwd)
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: actions/download-artifact@v3
       with:
@@ -322,7 +322,7 @@ jobs:
     runs-on: ubuntu-latest
     if: contains(github.ref, 'refs/tags/v')
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: actions/download-artifact@v3
       with:

@@ -60,7 +60,6 @@ File.readlines(".cross_rubies", chomp: true).each do |platform|
 end
 
 task "update:sha" do
-  
 end
 
 require "rake/clean"

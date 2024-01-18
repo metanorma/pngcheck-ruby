@@ -158,6 +158,6 @@ RSpec.describe do
       "\xF4\xD1\r\xF4\xD1\r\xF4\xD1\r\xF4".unpack(f)
     end
   rescue LoadError => e
-    puts "Failed to load libpng-ruby, skipping compatibility test"
+    puts "Failed to load libpng-ruby (#{e.message}), skipping compatibility test"
   end
 end

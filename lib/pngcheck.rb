@@ -54,7 +54,7 @@ module PngCheck
 
   class << self
     def analyze_file(path)
-      return [STATUS_CRITICAL_ERROR, EMPTY_IMAGE] if File.zero? path
+      return [STATUS_CRITICAL_ERROR, EMPTY_IMAGE] if File.empty?(path)
 
       do_analyze_file(path)
     end

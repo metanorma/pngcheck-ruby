@@ -18,7 +18,7 @@ module PngCheck
     def files_to_load_all
       @files << {
         url: "file:#{ROOT}/#{PNGCHECK_LOCAL}",
-        sha256: PNGCHECK_SHA, 
+        sha256: PNGCHECK_SHA,
       }
     end
 
