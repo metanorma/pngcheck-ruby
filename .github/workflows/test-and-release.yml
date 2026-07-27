@@ -128,9 +128,9 @@ jobs:
 
       - run: bundle exec rake gem:native:${{ matrix.platform }}
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: pkg
+          name: pkg-${{ matrix.platform }}
           path: pkg/*.gem
 
   package-linux-musl-x86_64:
@@ -152,9 +152,9 @@ jobs:
         bundle install
         bundle exec rake gem:native:x86_64-linux-musl
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
-        name: pkg
+        name: pkg-x86_64-linux-musl
         path: pkg/*.gem
 
   package-linux-musl-aarch64:
@@ -183,9 +183,9 @@ jobs:
           bundle install
           bundle exec rake gem:native:aarch64-linux-musl
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
-        name: pkg
+        name: pkg-aarch64-linux-musl
         path: pkg/*.gem
 
 # ----- Test packages with native extensions -----
@@ -212,10 +212,11 @@ jobs:
         bundler: ${{ env.BUNDLER_VER }}
         bundler-cache: false
 
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
-        name: pkg
+        pattern: pkg-*
         path: pkg
+        merge-multiple: true
 
     - name: Install binary gem
       run: |
@@ -241,10 +242,11 @@ jobs:
     - run: git config --global --add safe.directory $(pwd)
     - uses: actions/checkout@v4
 
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
-        name: pkg
+        pattern: pkg-*
         path: pkg
+        merge-multiple: true
 
     - run: gem install bundler:${{ env.BUNDLER_VER }} --no-document
     - name: Install binary gem
@@ -276,10 +278,11 @@ jobs:
         bundler: ${{ env.BUNDLER_VER }}
         bundler-cache: false
 
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
-        name: pkg
+        pattern: pkg-*
         path: pkg
+        merge-multiple: true
 
     - run: gem install bundler:${{ env.BUNDLER_VER }} --no-document
     - name: Install gem
@@ -304,10 +307,11 @@ jobs:
     - run: git config --global --add safe.directory $(pwd)
     - uses: actions/checkout@v4
 
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
-        name: pkg
+        pattern: pkg-*
         path: pkg
+        merge-multiple: true
 
     - run: gem install bundler:${{ env.BUNDLER_VER }} --no-document
     - name: Install ruby gem
@@ -324,10 +328,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
-        name: pkg
+        pattern: pkg-*
         path: pkg
+        merge-multiple: true
 
     - uses: actions-mn/gem-release@main
       with:
